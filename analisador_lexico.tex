@@ -1,0 +1,89 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{url}
+\usepackage{listings}
+
+\title{\Large UFMG/ICEx/DCC\\
+\Large Compiladores I\\
+\large Professora: Mariza Andrade da Silva Bigonha
+\normalsize 2º Semestre de 2014\\
+}
+\author{Pablo Marcondes Fonseca\\
+\texttt{pablom@dcc.ufmg.br}}
+
+\begin{document}
+
+%\maketitle
+\centerline{\Large UFMG/ICEx/DCC}
+\medskip
+\centerline{\Large Compiladores I}
+\medskip
+\centerline{\large Professora: Mariza Andrade da Silva Bigonha}
+\medskip
+\centerline{\normalsize 2º Semestre de 2014}
+\medskip
+\centerline{\large Aluno: Pablo Marcondes Fonseca \texttt{pablom@dcc.ufmg.br}}
+\bigskip
+\centerline{\Large \textbf{Analisador Léxico}}
+
+\section{Descrição}
+
+O analisador léxico foi implementado na linguagem C++, utilizando as ferramentas flex++ e bison++. O bison++ foi utilizado apenas como um início do analisador sintático, gerando um arquivo fonte de cabeçalho a ser utilizado no analisador léxico para adiantar o próximo trabalho.
+
+A maior dificuldade encontrada foi com relação ao uso das ferramentas, principalmente na tradução da gramática para as expressões regulares e criação dos \textit{tokens}. Após uma série de estudos utilizando os manuais oficiais, e exemplos de apoio, foi possível entender o funcionamento do sistema de geração de código o suficiente para concluir este trabalho.
+
+
+\section{Implementação e Resultados}
+
+Foi criado um programa principal para executar continuamente o analisador léxico até o término do arquivo de entrada, esse programa tem seu código na listagem \ref{lst:main}
+
+\lstinputlisting[basicstyle=\footnotesize,language=C++,caption={Programa principal},label={lst:main}]{test.cpp}
+
+\medskip
+O analisador léxico utilizando a ferramenta Flex++ para gerar código, torna-se uma tarefa de especificação em uma linguagem própria do Lex, mas muito próxima de C. No arquivo scanner.l, que pode ser visto na listagem \ref{lst:lex}, definiu-se um conjunto de expressões regulares, e os \textit{tokens} a serem retornados ao encontrar-se cada uma das partes definidas na gramática dada.
+
+\lstinputlisting[basicstyle=\footnotesize,language=C++,caption={Programa Lex},label={lst:lex}]{scanner.l}
+
+\medskip
+O método utilizado para se verificar a correção do analisador léxico foi a execução do programa sobre cada um dos testes disponibilizados na especificação do trabalho prático. Os programas de teste utilizados, bem como seus tokens seguem nas listagens abaixo a partir da listagem \ref{lst:in1}:
+
+\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste1.lsm},label={lst:in1}]{teste1.lsm}
+
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste1.lsm},label={lst:out1}]{teste1.lsm.out}
+
+
+\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste2.lsm},label={lst:in2}]{teste2.lsm}
+
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste2.lsm},label={lst:out2}]{teste2.lsm.out}
+
+
+\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste3.lsm},label={lst:in3}]{teste3.lsm}
+
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste3.lsm},label={lst:out3}]{teste3.lsm.out}
+
+\pagebreak
+\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste4.lsm},label={lst:in4}]{teste4.lsm}
+
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste4.lsm},label={lst:out4}]{teste4.lsm.out}
+
+
+\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste5.lsm},label={lst:in5}]{teste5.lsm}
+
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste5.lsm},label={lst:out5}]{teste5.lsm.out}
+
+
+\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste6.lsm},label={lst:in6}]{teste6.lsm}
+
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste6.lsm},label={lst:out6}]{teste6.lsm.out}
+
+
+\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste7.lsm},label={lst:in7}]{teste7.lsm}
+
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste7.lsm},label={lst:out7}]{teste7.lsm.out}
+
+\end{document}

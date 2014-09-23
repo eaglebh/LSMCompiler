@@ -22,7 +22,7 @@ using namespace std;
 %start program
 %token PROGRAM
 %token UNKNOWN
-%token <uint_type> UNSIGNED_INTEGER
+%token <uint_type> UINT
 %token <id>        ID
 %token <lbls>      IF WHILE DO LABEL
 %token DECLARE END INTEGER REAL BOOLEAN CHAR ARRAY OF PROCEDURE THEN ELSE UNTIL 

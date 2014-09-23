@@ -5,5 +5,4 @@ program teste1
             c := a + b
         else c := a - b * c
         end
-
     end

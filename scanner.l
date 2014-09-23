@@ -20,6 +20,7 @@ PRINTED '[^'\n]*'
 
 %%
 {DISCARD}
+\n { OUT("\n"); }
 {PRINTED} { OUT("STRING"); return(LSMParser::STRING); } 
 \, { OUT(","); return(LSMParser::COMMA); }
 \; { OUT(";"); return(LSMParser::SEMI_COLON); }
@@ -30,7 +31,7 @@ PRINTED '[^'\n]*'
 \] { OUT("]"); return(LSMParser::CLOSE_BRACK); }
 \: { OUT(":"); return(LSMParser::TWO_DOTS); }
 program { OUT("PROGRAM"); return(LSMParser::PROGRAM); }
-{DIGIT}+ { OUT("UNSIGNED_INTEGER"); return(LSMParser::UNSIGNED_INTEGER); }
+{DIGIT}+ { OUT("UINT"); return(LSMParser::UINT); }
 if { OUT("IF"); return(LSMParser::IF); }
 while { OUT("WHILE"); return(LSMParser::WHILE); }
 do { OUT("DO"); return(LSMParser::DO); }
@@ -62,12 +63,7 @@ true { OUT("TRUE"); return(LSMParser::TRUE); }
 \*|\/|and { OUT("MULOP"); return(LSMParser::MULOP); }
 [-+]* { OUT("SIGN"); return(LSMParser::SIGN); }
 {LETTER} { OUT("ID"); return(LSMParser::ID); }
-.                 {
-                   return LSMParser::UNKNOWN;
-                 }
-<<EOF>>           {
-                   yyterminate();
-                 }
-\n { OUT("\n"); }
+. { return LSMParser::UNKNOWN; }
+<<EOF>> { yyterminate(); }
 %%
 
