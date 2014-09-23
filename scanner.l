@@ -1,16 +1,15 @@
 %option c++
-%option noyywrap
+%option yyclass="LSMScanner"
 
 %{
-//%option yyclass="LSMScanner"
-//#include "scanner.h"
 #include<sstream>
+#include "scanner.h"
 #include "parser.h"
 #include <cstdlib>
-//YY_CalcParser_STYPE val;
 
 //#define OUT(STR) printf("%-20s # %s \n", STR, token);
-#define OUT(STR) printf("%-20s\n", STR);
+//#define OUT(STR) printf("%-20s\n", STR);
+#define OUT(STR) printf("%s ", STR);
 %}
 
 DIGIT   [0-9]
@@ -19,54 +18,61 @@ DISCARD [\t ]+
 
 %%
 {DISCARD}
-\, { OUT(","); return(Parser::COMMA); }
-\; { OUT(";"); return(Parser::SEMI_COLON); }
-\. { OUT("."); return(Parser::DOT); }
-\( { OUT("("); return(Parser::OPEN_PARENS); }
-\) { OUT(")"); return(Parser::CLOSE_PARENS); }
-\[ { OUT("["); return(Parser::OPEN_BRACK); }
-\] { OUT("]"); return(Parser::CLOSE_BRACK); }
-\: { OUT(":"); return(Parser::TWO_DOTS); }
-\' { OUT("'"); return(Parser::APOST); }
-program { OUT("PROGRAM"); return(Parser::PROGRAM); }
-{DIGIT}+ { OUT("UNSIGNED_INTEGER"); return(Parser::UNSIGNED_INTEGER); }
-if { OUT("IF"); return(Parser::IF); }
-while { OUT("WHILE"); return(Parser::WHILE); }
-do { OUT("DO"); return(Parser::DO); }
-label { OUT("LABEL"); return(Parser::LABEL); }
-declare { OUT("DECLARE"); return(Parser::DECLARE); }
-end { OUT("END"); return(Parser::END); }
-integer { OUT("INTEGER"); return(Parser::INTEGER); }
-real { OUT("REAL"); return(Parser::REAL); }
-boolean { OUT("BOOLEAN"); return(Parser::BOOLEAN); }
-char { OUT("CHAR"); return(Parser::CHAR); }
-array { OUT("ARRAY"); return(Parser::ARRAY); }
-of { OUT("OF"); return(Parser::OF); }
-procedure { OUT("PROCEDURE"); return(Parser::PROCEDURE); }
-then { OUT("THEN"); return(Parser::THEN); }
-else { OUT("ELSE"); return(Parser::ELSE); }
-until { OUT("UNTIL"); return(Parser::UNTIL); }
-read { OUT("READ"); return(Parser::READ); }
-write { OUT("WRITE"); return(Parser::WRITE); }
-goto { OUT("GOTO"); return(Parser::GOTO); }
-return { OUT("RETURN"); return(Parser::RETURN); }
-not { OUT("NOT"); return(Parser::NOT); }
-or { OUT("OR"); return(Parser::OR); }
-and { OUT("AND"); return(Parser::AND); }
-false { OUT("FALSE"); return(Parser::FALSE); }
-true { OUT("TRUE"); return(Parser::TRUE); }
-":=" { OUT("ASSIGNOP"); return(Parser::ASSIGNOP); }
-=|<|<=|>|>=|!= { OUT("RELOP"); return(Parser::RELOP); } 
-\+|-|or { OUT("ADDOP"); return(Parser::ADDOP); }
-\*|\/|and { OUT("MULOP"); return(Parser::MULOP); }
-[-+]* { OUT("SIGN"); return(Parser::SIGN); }
-{LETTER} { OUT("IDENTIFIER"); return(Parser::IDENTIFIER); }
-[:print:] { OUT("CHARACTER"); return(Parser::CHARACTER); } 
+\, { OUT(","); return(LSMParser::COMMA); }
+\; { OUT(";"); return(LSMParser::SEMI_COLON); }
+\. { OUT("."); return(LSMParser::DOT); }
+\( { OUT("("); return(LSMParser::OPEN_PARENS); }
+\) { OUT(")"); return(LSMParser::CLOSE_PARENS); }
+\[ { OUT("["); return(LSMParser::OPEN_BRACK); }
+\] { OUT("]"); return(LSMParser::CLOSE_BRACK); }
+\: { OUT(":"); return(LSMParser::TWO_DOTS); }
+\' { OUT("'"); return(LSMParser::APOST); }
+program { OUT("PROGRAM"); return(LSMParser::PROGRAM); }
+{DIGIT}+ { OUT("UNSIGNED_INTEGER"); return(LSMParser::UNSIGNED_INTEGER); }
+if { OUT("IF"); return(LSMParser::IF); }
+while { OUT("WHILE"); return(LSMParser::WHILE); }
+do { OUT("DO"); return(LSMParser::DO); }
+label { OUT("LABEL"); return(LSMParser::LABEL); }
+declare { OUT("DECLARE"); return(LSMParser::DECLARE); }
+end { OUT("END"); return(LSMParser::END); }
+integer { OUT("INTEGER"); return(LSMParser::INTEGER); }
+real { OUT("REAL"); return(LSMParser::REAL); }
+boolean { OUT("BOOLEAN"); return(LSMParser::BOOLEAN); }
+char { OUT("CHAR"); return(LSMParser::CHAR); }
+array { OUT("ARRAY"); return(LSMParser::ARRAY); }
+of { OUT("OF"); return(LSMParser::OF); }
+procedure { OUT("PROCEDURE"); return(LSMParser::PROCEDURE); }
+then { OUT("THEN"); return(LSMParser::THEN); }
+else { OUT("ELSE"); return(LSMParser::ELSE); }
+until { OUT("UNTIL"); return(LSMParser::UNTIL); }
+read { OUT("READ"); return(LSMParser::READ); }
+write { OUT("WRITE"); return(LSMParser::WRITE); }
+goto { OUT("GOTO"); return(LSMParser::GOTO); }
+return { OUT("RETURN"); return(LSMParser::RETURN); }
+not { OUT("NOT"); return(LSMParser::NOT); }
+or { OUT("OR"); return(LSMParser::OR); }
+and { OUT("AND"); return(LSMParser::AND); }
+false { OUT("FALSE"); return(LSMParser::FALSE); }
+true { OUT("TRUE"); return(LSMParser::TRUE); }
+":=" { OUT("ASSIGNOP"); return(LSMParser::ASSIGNOP); }
+=|<|<=|>|>=|!= { OUT("RELOP"); return(LSMParser::RELOP); } 
+\+|-|or { OUT("ADDOP"); return(LSMParser::ADDOP); }
+\*|\/|and { OUT("MULOP"); return(LSMParser::MULOP); }
+[-+]* { OUT("SIGN"); return(LSMParser::SIGN); }
+{LETTER} { OUT("ID"); return(LSMParser::ID); }
+[:print:] { OUT("CHARACTER"); return(LSMParser::CHARACTER); } 
 .                 {
-                   return Parser::UNKNOWN;
+                   return LSMParser::UNKNOWN;
                  }
 <<EOF>>           {
                    yyterminate();
                  }
-\n
+\n { OUT("\n"); }
 %%
+
+int main(int argc, char ** argv)
+{
+	LSMScanner scanner;
+	while( scanner.yylex() );
+	return 0;
+}
