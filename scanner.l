@@ -1,5 +1,6 @@
 %option c++
 %option yyclass="LSMScanner"
+%option noyywrap
 
 %{
 #include<sstream>
@@ -70,9 +71,3 @@ true { OUT("TRUE"); return(LSMParser::TRUE); }
 \n { OUT("\n"); }
 %%
 
-int main(int argc, char ** argv)
-{
-	LSMScanner scanner;
-	while( scanner.yylex() );
-	return 0;
-}

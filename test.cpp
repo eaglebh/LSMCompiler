@@ -5,6 +5,6 @@ using namespace std;
 int main(int argc, char ** argv)
 {
        LSMScanner scanner;
-       scanner.yylex();
+       while(scanner.yylex());
        return 0;
 }
