@@ -10,8 +10,8 @@ program test6
             if b then p(q) end;
             f
         end
-        procedure r do write(’.’) end
-    do  write(’x’); write(’=’);
+        procedure r do write('.') end
+    do  write('x'); write('=');
         b :=false;
         p(r)
     end

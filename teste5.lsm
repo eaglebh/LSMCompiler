@@ -17,5 +17,5 @@ program teste5
     do  read(number); write(number);
         checkfactor(number,nofactor);
         prime := nofactor;
-        if prime then write(’S’) else write(’N’) end
+        if prime then write('S') else write('N') end
     end

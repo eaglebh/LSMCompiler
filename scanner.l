@@ -16,9 +16,11 @@
 DIGIT   [0-9]
 LETTER	[a-zA-Z][a-zA-Z0-9]*
 DISCARD [\t ]+
+PRINTED '[^'\n]*'
 
 %%
 {DISCARD}
+{PRINTED} { OUT("STRING"); return(LSMParser::STRING); } 
 \, { OUT(","); return(LSMParser::COMMA); }
 \; { OUT(";"); return(LSMParser::SEMI_COLON); }
 \. { OUT("."); return(LSMParser::DOT); }
@@ -27,7 +29,6 @@ DISCARD [\t ]+
 \[ { OUT("["); return(LSMParser::OPEN_BRACK); }
 \] { OUT("]"); return(LSMParser::CLOSE_BRACK); }
 \: { OUT(":"); return(LSMParser::TWO_DOTS); }
-\' { OUT("'"); return(LSMParser::APOST); }
 program { OUT("PROGRAM"); return(LSMParser::PROGRAM); }
 {DIGIT}+ { OUT("UNSIGNED_INTEGER"); return(LSMParser::UNSIGNED_INTEGER); }
 if { OUT("IF"); return(LSMParser::IF); }
@@ -61,7 +62,6 @@ true { OUT("TRUE"); return(LSMParser::TRUE); }
 \*|\/|and { OUT("MULOP"); return(LSMParser::MULOP); }
 [-+]* { OUT("SIGN"); return(LSMParser::SIGN); }
 {LETTER} { OUT("ID"); return(LSMParser::ID); }
-[:print:] { OUT("CHARACTER"); return(LSMParser::CHARACTER); } 
 .                 {
                    return LSMParser::UNKNOWN;
                  }

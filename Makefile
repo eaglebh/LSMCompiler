@@ -19,4 +19,4 @@ test: scanner.o parser.o test.o
 	g++ -o test test.o parser.o scanner.o
 
 clean:
-	rm -rf *.o test
+	rm -rf *.o test scanner.cpp parser.cpp

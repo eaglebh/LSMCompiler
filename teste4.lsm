@@ -12,5 +12,5 @@ program teste4
             end
         end;
         prime := nofactor;
-        if prime then write(’S’) else write(’N’) end
+        if prime then write('S') else write('N') end
     end

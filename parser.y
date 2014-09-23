@@ -30,8 +30,9 @@ using namespace std;
 %token NOT OR AND FALSE TRUE
 %token ASSIGNOP
 %token RELOP ADDOP MULOP
-%token SIGN DIGIT LETTER CHARACTER
-%token COMMA SEMI_COLON DOT OPEN_PARENS CLOSE_PARENS OPEN_BRACK CLOSE_BRACK TWO_DOTS APOST
+%token SIGN DIGIT LETTER
+%token COMMA SEMI_COLON DOT OPEN_PARENS CLOSE_PARENS OPEN_BRACK CLOSE_BRACK TWO_DOTS 
+%token EXP STRING
 
 %type <uint_type> unsigned_integer
 
@@ -95,7 +96,7 @@ unsigned_real	: unsigned_integer DOT DIGIT scale_factor
     		| unsigned_integer DOT DIGIT
     		| unsigned_integer scale_factor
     		| unsigned_integer;
-scale_factor	: 'E' SIGN unsigned_integer;
-char_constant	: APOST CHARACTER APOST;
+scale_factor	: EXP SIGN unsigned_integer;
+char_constant	: STRING;
 identifier	: LETTER | LETTER DIGIT;
 %%
