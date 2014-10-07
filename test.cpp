@@ -4,7 +4,9 @@
 using namespace std;
 int main(int argc, char ** argv)
 {
-       LSMScanner scanner;
-       while(scanner.yylex());
+    LSMScanner scanner;
+       yy::LSMParser parser(scanner);
+       parser.parse();
+       //yyparse();
        return 0;
 }
