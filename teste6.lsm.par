@@ -1,0 +1,4 @@
+PROGRAM ID 
+ DECLARE 
+ BOOLEAN ID ; 
+ PROCEDURE ID ( PROCEDURE ID ) Error: syntax error, unexpected CLOSE_PARENS, expecting ID

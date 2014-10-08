@@ -1,0 +1,4 @@
+PROGRAM ID 
+ DECLARE 
+ INTEGER ID , ID ; 
+ ARRAY UINT Error: syntax error, unexpected UINT, expecting DIGIT
