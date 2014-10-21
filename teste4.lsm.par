@@ -1,0 +1,9 @@
+PROGRAM ID 
+ DECLARE 
+ INTEGER ID , ID ; 
+ BOOLEAN ID , ID 
+ DO READ ( ID ) ; 
+ WRITE ( ID ) ; 
+ ID ASSIGNOP ID ; 
+ ID ASSIGNOP TRUE ; 
+ WHILE ID AND Error: syntax error, unexpected AND, expecting DO

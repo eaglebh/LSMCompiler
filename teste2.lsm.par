@@ -1,0 +1,4 @@
+PROGRAM ID 
+ DECLARE 
+ INTEGER ID , ID , ID 
+ ID Error: syntax error, unexpected ID, expecting DO or SEMI_COLON
