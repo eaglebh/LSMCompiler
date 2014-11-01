@@ -10,8 +10,7 @@ using namespace yy;
 
 typedef LSMParser::token token;
 
-/*#define SAVE_AND_COUNT { yylval->string = new std::string(yytext, yyleng); } */
-#define SAVE_AND_COUNT {}
+#define SAVE_AND_COUNT { yylval->string = new std::string(yytext, yyleng); }
 #define OUT(STR) printf("%s ", STR);
 #define TOKEN(t) (yylval.token = t)
 
@@ -23,7 +22,7 @@ typedef LSMParser::token token;
 %option c++
 
 DIGIT   [0-9]
-LETTER	[a-zA-Z][a-zA-Z0-9]*
+LETTER	[a-zA-Z_][a-zA-Z0-9]*
 DISCARD [\t ]+
 PRINTED '[^'\n]*'
 
@@ -62,15 +61,14 @@ write { OUT("WRITE"); SAVE_AND_COUNT; return(token::WRITE); }
 goto { OUT("GOTO"); SAVE_AND_COUNT; return(token::GOTO); }
 return { OUT("RETURN"); SAVE_AND_COUNT; return(token::RETURN); }
 not { OUT("NOT"); SAVE_AND_COUNT; return(token::NOT); }
-or { OUT("OR"); SAVE_AND_COUNT; return(token::OR); }
-and { OUT("AND"); SAVE_AND_COUNT; return(token::AND); }
+or { OUT("OR"); SAVE_AND_COUNT; return(token::ADDOP); }
+and { OUT("AND"); SAVE_AND_COUNT; return(token::MULOP); }
 false { OUT("FALSE"); SAVE_AND_COUNT; return(token::FALSE); }
 true { OUT("TRUE"); SAVE_AND_COUNT; return(token::TRUE); }
 ":=" { OUT("ASSIGNOP"); SAVE_AND_COUNT; return(token::ASSIGNOP); }
 =|<|<=|>|>=|!= { OUT("RELOP"); SAVE_AND_COUNT; return(token::RELOP); }
 \+|-|or { OUT("ADDOP"); SAVE_AND_COUNT; return(token::ADDOP); }
 \*|\/|and { OUT("MULOP"); SAVE_AND_COUNT; return(token::MULOP); }
-[-+]* { OUT("SIGN"); SAVE_AND_COUNT; return(token::SIGN); }
 {LETTER} { OUT("ID"); SAVE_AND_COUNT; return(token::ID); }
 . { return token::UNKNOWN; }
 <<EOF>> { yyterminate(); }

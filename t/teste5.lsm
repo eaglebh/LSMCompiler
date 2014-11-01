@@ -1,14 +1,14 @@
 program teste5
     declare
-        integer number;
+        integer number, divisor;
         boolean nofactor, prime;
-        procedure checkfactor(number : integer; nofactor: boolean)
-        begin
-            integer integer;
-            boolean boolean
+        procedure checkfactor(integer number; boolean nofactor)
+        declare
+            integer integer1;
+            boolean bo
         do  divisor := number; prime := true;
             while prime and divisor > 1 do
-                if (number mod divisor) = 0 then prime := false
+                if (number / divisor) = 0 then prime := false
                 else divisor := divisor - 1
                 end
             end;

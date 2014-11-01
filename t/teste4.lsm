@@ -7,7 +7,7 @@ program teste4
         divisor := number;
         nofactor := true;
         while nofactor and (divisor > 1) do
-            if (number mod divisor) = 0 then nofactor := false
+            if (number / divisor) = 0 then nofactor := false
             else divisor := divisor - 1
             end
         end;
