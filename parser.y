@@ -1,26 +1,29 @@
-%skeleton "lalr1.cc"
-%defines
-%define parser_class_name {LSMParser}
 
-%code requires{
-    class LSMScanner;
-}
 
-%error-verbose
-%parse-param { LSMScanner  &scanner  }
+%{
+    #include <stdio.h>
+    #include <ctype.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include <stdbool.h>
+    #include "compilador.h"
+    #include "tabelasimb.h"
+    #include "pilha.h"
+    #include "aux.h"
+    #include "trataerro.h"
 
-%code{
-    #include <cstdio>
-    #include <cstdlib>
-    #include <vector>
-    
-    #include "scanner.h"
+    int num_vars, nivel_lexico, deslocamento, cont_rotulo, *temp_num, indice_param, teste=0;
+    char *rotulo_mepa, *rotulo_mepa_aux;
+    SimboloT *simb, *simb_aux, *proc_atual;
 
-    #undef yylex
-    #define yylex scanner.yylex
+    TabelaSimbT *tab, tabelaSimbDin;
+    PilhaT pilha_rot, pilha_tipos, pilha_amem_dmem, pilha_simbs;
+
+    bool chamada_de_proc;
+    TipoT tipo_aux;
     
     #define empilhaAMEM(n_vars) \
-	temp_num = malloc (sizeof (int)); \
+	temp_num = (int*)malloc (sizeof (int)); \
 	*temp_num = n_vars; \
 	empilha(&pilha_amem_dmem, temp_num);
     
@@ -30,7 +33,6 @@
 	if (num_vars) { \
 	  geraCodigoArgs (NULL, "DMEM %d", num_vars);  \
 	}
-    
 
     #define geraCodigoARMZI(simbolo) \
 	if (simbolo->passagem == T_VALOR) { geraCodigoArgs (NULL, "ARMZ %d, %d", simbolo->nivel_lexico, simbolo->deslocamento); } \
@@ -53,10 +55,12 @@
     #define geraCodigoLEIT() \
 	geraCodigo (NULL, "LEIT"); simb = procuraSimboloTab(tab, token, nivel_lexico); \
 	    geraCodigoARMZI(simb);
+
     #define geraCodigoIMPR() \
 	simb = procuraSimboloTab(tab, token, nivel_lexico); \
 	    geraCodigoCarregaValor(simb); \
 		geraCodigo (NULL, "IMPR");
+
     #define geraCodigoENPR(categoria) \
 	geraRotulo(&rotulo_mepa, &cont_rotulo, &pilha_rot); \
 	    geraCodigoArgs (desempilha(&pilha_rot), "ENPR %d", ++nivel_lexico); \
@@ -64,31 +68,26 @@
 		    simb->rotulo = rotulo_mepa; \
 			empilha(&pilha_simbs, simb); \
 			    simb->num_parametros=num_vars = 0;
+
     #define desempilhaEImprime(pilha) \
 	while ((simb = desempilhaMesmoNULL(pilha))) { debug_print("[desempilhaEImprime] simb->id = '%s'\n", simb->id); }
 
-}
-
-/* Represents the many different ways we can access our data */
-%union {
-    int token;
-    std::string *string;
-}
+%}
 
 %start program
 %token PROGRAM
 %token UNKNOWN
-%token <uint_type>  UINT
-%token <string>     ID
-%token <string>     IF WHILE DO LABEL
-%token <string>     DECLARE END INTEGER REAL BOOLEAN CHAR ARRAY OF PROCEDURE THEN ELSE UNTIL FALSE TRUE
-%token <token>      READ WRITE GOTO RETURN
-%token <token>      NOT OR AND
-%token <token>      ASSIGNOP
-%token <token>      RELOP ADDOP MULOP
-%token <string>     DIGIT LETTER
-%token <token>      COMMA SEMI_COLON DOT OPEN_PARENS CLOSE_PARENS OPEN_BRACK CLOSE_BRACK TWO_DOTS 
-%token <string>     EXP STRING
+%token UINT
+%token ID
+%token IF WHILE DO LABEL
+%token DECLARE END INTEGER REAL BOOLEAN CHAR ARRAY OF PROCEDURE THEN ELSE UNTIL FALSE TRUE
+%token READ WRITE GOTO RETURN
+%token NOT OR AND
+%token ASSIGNOP
+%token RELOP ADDOP MULOP
+%token DIGIT LETTER
+%token COMMA SEMI_COLON DOT OPEN_PARENS CLOSE_PARENS OPEN_BRACK CLOSE_BRACK TWO_DOTS 
+%token EXP STRING
 
 /* operator precedence */
 %left '+' '-'
@@ -98,12 +97,14 @@
 %%
 program         : PROGRAM identifier proc_body ;
 proc_body       : block_stmt ;
-block_stmt      : DECLARE {printf("dd");} decl_list {printf("dl");} DO stmt_list END { printf("[declare=%s]",yylhs.value.string->c_str()); }
-                | DO stmt_list END { printf("[do=%s]",yylhs.value.string->c_str()); };
+block_stmt      : DECLARE decl_list DO stmt_list END 
+                | DO stmt_list END ;
 decl_list       : decl 
                 | decl_list SEMI_COLON decl ;
-decl            : variable_decl 
-                | proc_decl;
+decl            : variable_decl { empilhaAMEM(deslocamento);
+                                            geraRotulo(&rotulo_mepa, &cont_rotulo, &pilha_rot);
+                                            geraCodigoArgs (NULL, "DSVS %s", rotulo_mepa); }
+                | proc_decl { geraCodigo ((char*)desempilha(&pilha_rot), "NADA"); };
 variable_decl   : type ident_list ;
 ident_list      : identifier 
                 | ident_list COMMA identifier ;
@@ -142,9 +143,9 @@ unlabelled_stmt : assign_stmt
                 | proc_stmt 
                 | return_stmt 
                 | block_stmt;
-assign_stmt     : variable {printf(" variable");} ASSIGNOP {printf(" assign");} expression {printf(" expression");};
-variable        : identifier {printf(" vi");}
-                | array_element {printf(" va");};
+assign_stmt     : variable ASSIGNOP expression ;
+variable        : identifier 
+                | array_element ;
 array_element   : identifier OPEN_BRACK expression CLOSE_BRACK ;
 if_stmt         : IF condition THEN stmt_list END    
                 | IF condition THEN stmt_list ELSE stmt_list END;
@@ -159,10 +160,10 @@ proc_stmt       : identifier OPEN_PARENS expr_list CLOSE_PARENS
 return_stmt     : RETURN;
 expr_list       : expression  
                 | expr_list COMMA expression;
-expression      : simple_expr {printf("simple_expr1");}
-		| simple_expr {printf("simple_expr2");} comparison {printf("comparison");} simple_expr {printf("simple_expr2.1");} ;
-simple_expr     : term {printf("term");}
-                | simple_expr {printf("simple_expr4");} ADDOP term;
+expression      : simple_expr 
+		| simple_expr comparison simple_expr ;
+simple_expr     : term 
+                | simple_expr ADDOP term;
 term            : factor_a 
                 | term MULOP factor_a ;
 factor_a        : factor 
@@ -179,18 +180,73 @@ comparison      : RELOP;
 boolean_constant: FALSE 
                 | TRUE;
 integer_constant: unsigned_integer;
-unsigned_integer: UINT { printf("[uint=%s]",yylhs.value.string->c_str()); };
+unsigned_integer: UINT ;
 real_constant   : unsigned_real;
 unsigned_real   : unsigned_integer DOT unsigned_integer scale_factor
                 | unsigned_integer DOT unsigned_integer
                 | unsigned_integer scale_factor ;
 scale_factor    : "E" ADDOP unsigned_integer;
 char_constant   : STRING  ;
-identifier      : ID { printf("[id=%s]",yylhs.value.string->c_str()); } ;
+identifier      : ID  ;
 %%
 
-void yy::LSMParser::error( const std::string &err_message )
-{
-    std::cerr << "Error: " << err_message << "\n";
-}
 
+int main (int argc, char** argv) {
+  FILE* fp;
+  extern FILE* yyin;
+
+  if (argc<2 || argc>2) {
+    printf("usage compilador <arq>a %d\n", argc);
+    return(-1);
+  }
+
+  fp=fopen (argv[1], "r");
+  if (fp == NULL) {
+    printf("usage compilador <arq>b\n");
+    return(-1);
+  }
+
+/* -------------------------------------------------------------------
+ *  Inicia a Tabela de Símbolos Dinamica (pilha)
+ * ------------------------------------------------------------------- */
+
+  tab = &tabelaSimbDin;
+  tab->num_simbolos = 0;
+  tab->primeiro=tab->ultimo=NULL;
+  inicializaPilha(&pilha_rot);
+  inicializaPilha(&pilha_tipos);
+  inicializaPilha(&pilha_simbs);
+
+/* -------------------------------------------------------------------
+ *  Inicializa as variaveis de controle
+ * ------------------------------------------------------------------- */
+
+  cont_rotulo = 0;
+
+/* -------------------------------------------------------------------
+ *  Inicia a Tabela de Símbolos
+ * ------------------------------------------------------------------- */
+
+  yyin=fp;
+  yyparse();
+
+#ifdef DEBUG
+  // int i;
+  // for (i=0; i<25; i++) {
+  //   tipo_aux = *(TipoT *)(desempilha(&pilha_tipos));
+  //   debug_print("[TipoT Tests] i=[%d].tipo_aux = %d\n", i, tipo_aux);
+  // }
+
+//  imprimeTabSimbolos(tab); // #DEBUG
+//  atribuiTipoSimbTab(tab, "f1", T_REAL);   // #DEBUG
+  imprimeTabSimbolos(tab); // #DEBUG
+
+  // removeSimbolosTab(tab, "f1", 1);
+
+  // imprimeTabSimbolos(tab); // #DEBUG
+  printf("[Teste] teste = %d\n", teste); //#DEBUG
+  desempilhaEImprime(&pilha_simbs);
+#endif
+
+  return 0;
+}

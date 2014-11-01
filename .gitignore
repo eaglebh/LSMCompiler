@@ -3,3 +3,10 @@ a.out
 *.aux
 *.log
 *.synctex.gz
+/compiladorF.o
+/parser.o
+/scanner.o
+/parser.output
+/parser.c
+/parser.h
+/MEPA

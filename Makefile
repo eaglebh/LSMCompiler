@@ -1,22 +1,25 @@
 all: test
 
-scanner.cpp: scanner.ll parser.cpp
-	flex -d -oscanner.cpp scanner.ll
+scanner.c: scanner.l parser.c
+	flex -d -oscanner.c scanner.l
 
-parser.cpp: parser.yy
-	bison -d --defines=parser.h -o parser.cpp parser.yy
+parser.c: parser.y
+	bison -d -v --defines=parser.h -o parser.c parser.y
 
-scanner.o: scanner.cpp parser.cpp
-	g++ -g -c scanner.cpp
+scanner.o: scanner.c parser.c
+	gcc -g -c scanner.c
 
-parser.o: parser.cpp scanner.o 
-	g++ -g -c parser.cpp
+parser.o: parser.c scanner.o 
+	gcc -g -c parser.c
 
 test.o: test.cpp 
-	g++ -g -c test.cpp
+	gcc -g -c test.cpp
 
-test: scanner.o parser.o test.o
-	g++ -g -o test test.o parser.o scanner.o
+compiladorF.o: compiladorF.c
+	gcc -g -c compiladorF.c
+
+test: scanner.o parser.o compiladorF.o
+	gcc -g -o test parser.o scanner.o compiladorF.o tabelasimb.c pilha.c aux.c trataerro.c -ll -ly -lc
 
 clean:
-	rm -rf *.o test scanner.cpp parser.cpp parser.h stack.hh
+	rm -rf *.o test scanner.c parser.c parser.h stack.hh
