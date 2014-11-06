@@ -1,15 +1,5 @@
-/* -------------------------------------------------------------------
- *            Arquivo: compilaodr.h
- * -------------------------------------------------------------------
- *              Autor: Bruno Muller Junior
- *               Data: 08/2007
- *      Atualizado em: [15/03/2012, 08h:22m]
- *
- * -------------------------------------------------------------------
- *
- * Tipos, protótipos e vaiáveis globais do compilador
- *
- * ------------------------------------------------------------------- */
+#ifndef COMPILADOR_H
+#define COMPILADOR_H
 
 #define TAM_TOKEN 16
 
@@ -76,3 +66,5 @@ extern int yylex (void);
 
 #define YY_DECL int yylex (void)
 #endif /* !YY_DECL */
+
+#endif

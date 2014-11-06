@@ -1,10 +1,10 @@
 all: test
 
 scanner.c: scanner.l parser.c
-	flex -d -oscanner.c scanner.l
+	flex  -oscanner.c scanner.l
 
 parser.c: parser.y
-	bison -d -v --defines=parser.h -o parser.c parser.y
+	bison -d --defines=parser.h -o parser.c parser.y
 
 scanner.o: scanner.c parser.c
 	gcc -g -c scanner.c

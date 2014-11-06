@@ -95,34 +95,43 @@
 
 
 %%
-program         : PROGRAM identifier proc_body ;
+program         : { geraCodigo (NULL, "INPP"); nivel_lexico = deslocamento = 0; chamada_de_proc = false; }
+                    PROGRAM identifier { simb = insereSimboloTab(tab, token, PROG, 0); empilha(&pilha_simbs, simb); } 
+                    proc_body { geraCodigoDMEM(); geraCodigo (NULL, "PARA"); };
 proc_body       : block_stmt ;
 block_stmt      : DECLARE decl_list DO stmt_list END 
                 | DO stmt_list END ;
-decl_list       : decl 
+decl_list       : { num_vars=0; } decl 
                 | decl_list SEMI_COLON decl ;
 decl            : variable_decl { empilhaAMEM(deslocamento);
                                             geraRotulo(&rotulo_mepa, &cont_rotulo, &pilha_rot);
                                             geraCodigoArgs (NULL, "DSVS %s", rotulo_mepa); }
                 | proc_decl { geraCodigo ((char*)desempilha(&pilha_rot), "NADA"); };
-variable_decl   : type ident_list ;
-ident_list      : identifier 
-                | ident_list COMMA identifier ;
+variable_decl   : type ident_list { geraCodigoArgs (NULL, "AMEM %d", num_vars); atribuiPassagemTab(tab, T_VALOR, num_vars); };
+ident_list      : identifier { num_vars++; simb = insereSimboloTab(tab, token, VS, nivel_lexico); simb->deslocamento = deslocamento++; }
+                | ident_list COMMA identifier { num_vars++; simb = insereSimboloTab(tab, token, VS, nivel_lexico); simb->deslocamento = deslocamento++; };
 type            : simple_type 
                 | array_type;
-simple_type     : INTEGER  
-                | REAL 
-                | BOOLEAN 
-                | CHAR 
-                | LABEL ;
+simple_type     : INTEGER { tipo_aux = atribuiTiposTab(tab, T_INTEGER); } 
+                | REAL { tipo_aux = atribuiTiposTab(tab, T_REAL); }
+                | BOOLEAN { tipo_aux = atribuiTiposTab(tab, T_BOOLEAN); }
+                | CHAR { tipo_aux = atribuiTiposTab(tab, T_CHAR); }
+                | LABEL { tipo_aux = atribuiTiposTab(tab, LABEL); } ;
 array_type      : ARRAY tamanho OF simple_type;
 tamanho         : integer_constant;
-proc_decl       : proc_header block_stmt ;
-proc_header     : PROCEDURE identifier  
-                | PROCEDURE identifier OPEN_PARENS formal_list CLOSE_PARENS ;
-formal_list     : parameter_decl  
-                | formal_list SEMI_COLON parameter_decl ;
-parameter_decl  : parameter_type identifier;
+proc_decl       : proc_header block_stmt { geraCodigoDMEM(); simb = desempilha(&pilha_simbs); removeFPSimbolosTab(tab, simb);
+                                                  geraCodigoArgs (NULL, "RTPR %d, %d", nivel_lexico--, simb->num_parametros); };
+proc_header     : PROCEDURE identifier { geraCodigoENPR(PROC); }
+                | PROCEDURE identifier { geraCodigoENPR(PROC); } 
+                    OPEN_PARENS 
+                    formal_list { deslocamentosParamsTab(tab, simb->num_parametros); simb->end_retorno = -4 - simb->num_parametros; } 
+                    CLOSE_PARENS ;
+formal_list     : { num_vars=0; } parameter_decl  
+                | formal_list SEMI_COLON { num_vars=0; } parameter_decl ;
+parameter_decl  : parameter_type identifier { simb->num_parametros++; num_vars++; simb_aux = insereSimboloTab(tab, token, PF, nivel_lexico); simb_aux->pai = simb;
+                                            debug_print("[insere param-last] simb->num_parametros = %d\n", simb->num_parametros); 
+                                            atribuiPassagemTab(tab, T_REFERENCIA, num_vars); insereParamLista(simb, tipo_aux, T_REFERENCIA, num_vars);
+                                                    debug_print("[Parametro por referencia] simb->id = %s, num_vars = %d\n", simb->id, num_vars);  };
 parameter_type  : type 
                 | proc_signature;
 proc_signature  : PROCEDURE identifier OPEN_PARENS type_list CLOSE_PARENS 
@@ -152,8 +161,8 @@ if_stmt         : IF condition THEN stmt_list END
 condition       : expression;
 loop_stmt       : WHILE condition DO stmt_list END
 		| DO stmt_list UNTIL condition;
-read_stmt       : READ OPEN_PARENS ident_list CLOSE_PARENS;
-write_stmt      : WRITE OPEN_PARENS expr_list CLOSE_PARENS;
+read_stmt       : READ OPEN_PARENS ident_list  CLOSE_PARENS;
+write_stmt      : WRITE OPEN_PARENS expr_list  CLOSE_PARENS;
 goto_stmt       : GOTO label;
 proc_stmt       : identifier OPEN_PARENS expr_list CLOSE_PARENS 
                 | identifier;
