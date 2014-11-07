@@ -1,10 +1,11 @@
-PROGRAM ID 
- DECLARE 
- INTEGER ID , ID ; 
- ARRAY UINT INTEGER ID 
- ARRAY UINT INTEGER ID ; 
- ARRAY UINT INTEGER ID 
- DO ID ASSIGNOP UINT ; ID ASSIGNOP UINT ; ID ASSIGNOP UINT ; 
- ID ( ID ) ASSIGNOP ID ( UINT MULOP ID ADDOP UINT ) ADDOP ID ( ID ) ADDOP ID ( UINT ) ; 
- ID ( ID ) ASSIGNOP ID ( ID ) 
- END 
+PROGRAM ID [id=teste3]
+ DECLARE dd
+ INTEGER ID [id=i], ID [id=j], ID [id=k]; 
+ ARRAY UINT [uint=100]OF INTEGER ID [id=a]; 
+ ARRAY UINT [uint=100]OF INTEGER ID [id=b]; 
+ ARRAY UINT [uint=100]OF INTEGER ID [id=c]
+ DO dlID [id=i]ASSIGNOP  vi variable assignUINT [uint=3]; termsimple_expr1 expressionID [id=j]ASSIGNOP  vi variable assignUINT [uint=4]; termsimple_expr1 expressionID [id=k]ASSIGNOP  vi variable assignUINT [uint=2]; termsimple_expr1 expression
+ ID [id=a][ ID [id=i]]  vitermsimple_expr1 va variableASSIGNOP  assignID [id=a][ UINT [uint=2]MULOP ID [id=i]ADDOP  vitermsimple_expr4UINT [uint=3]] simple_expr1 vaADDOP termsimple_expr4ID [id=b][ ID [id=j]]  vitermsimple_expr1 vaADDOP simple_expr4ID [id=c][ UINT [uint=3]] termsimple_expr1 va; simple_expr1 expression
+ ID [id=c][ ID [id=i]]  vitermsimple_expr1 va variableASSIGNOP  assignID [id=a][ ID [id=i]]  vitermsimple_expr1 va
+ END termsimple_expr1 expression[declare=declare]
+ 

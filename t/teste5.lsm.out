@@ -1,21 +1,22 @@
-PROGRAM ID 
- DECLARE 
- INTEGER ID ; 
- BOOLEAN ID , ID ; 
- PROCEDURE ID ( ID : INTEGER ; ID : BOOLEAN ) 
- ID 
- INTEGER INTEGER ; 
- BOOLEAN BOOLEAN 
- DO ID ASSIGNOP ID ; ID ASSIGNOP TRUE ; 
- WHILE ID AND ID RELOP UINT DO 
- IF ( ID ID ID ) RELOP UINT THEN ID ASSIGNOP FALSE 
- ELSE ID ASSIGNOP ID ADDOP UINT 
- END 
+PROGRAM ID [id=teste5]
+ DECLARE dd
+ INTEGER ID [id=number], ID [id=divisor]; 
+ BOOLEAN ID [id=nofactor], ID [id=prime]; 
+ PROCEDURE ID [id=checkfactor]( INTEGER ID [id=number]; BOOLEAN ID [id=nofactor]) 
+ DECLARE dd
+ INTEGER ID [id=integer1]; 
+ BOOLEAN ID [id=bo]
+ DO dlID [id=divisor]ASSIGNOP  vi variable assignID [id=number];  vitermsimple_expr1 expressionID [id=prime]ASSIGNOP  vi variable assignTRUE ; termsimple_expr1 expression
+ WHILE ID [id=prime]AND  viID [id=divisor]RELOP  vitermsimple_expr2comparisonUINT [uint=1]DO termsimple_expr2.1
+ IF ( ID [id=number]MULOP  viID [id=divisor])  vitermsimple_expr1RELOP termsimple_expr2comparisonUINT [uint=0]THEN termsimple_expr2.1ID [id=prime]ASSIGNOP  vi variable assignFALSE 
+ ELSE termsimple_expr1 expressionID [id=divisor]ASSIGNOP  vi variable assignID [id=divisor]ADDOP  vitermsimple_expr4UINT [uint=1]
+ END simple_expr1 expression
  END ; 
- ID ASSIGNOP ID 
- END 
- DO READ ( ID ) ; WRITE ( ID ) ; 
- ID ( ID , ID ) ; 
- ID ASSIGNOP ID ; 
- IF ID THEN WRITE ( STRING ) ELSE WRITE ( STRING ) END 
- END 
+ ID [id=nofactor]ASSIGNOP  vi variable assignID [id=prime]
+ END  vitermsimple_expr1 expression[declare=declare]
+ DO dlREAD ( ID [id=number]) ; WRITE ( ID [id=number])  vitermsimple_expr1; 
+ ID [id=checkfactor]( ID [id=number],  vitermsimple_expr1ID [id=nofactor])  vitermsimple_expr1; 
+ ID [id=prime]ASSIGNOP  vi variable assignID [id=nofactor];  vitermsimple_expr1 expression
+ IF ID [id=prime]THEN  vitermsimple_expr1WRITE ( STRING ) termsimple_expr1ELSE WRITE ( STRING ) termsimple_expr1END 
+ END [declare=declare]
+ 
