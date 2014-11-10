@@ -3,13 +3,13 @@ PROGRAM ID [id=teste7]
  LABEL ID [id=L1], ID [id=L2]; 
  INTEGER ID [id=x]
  DO dlID [id=x]ASSIGNOP  vi variable assignUINT [uint=0]; termsimple_expr1 expression
- ID [id=L1]: ID [id=x]ASSIGNOP  vi variable assignID [id=x]ADDOP  vitermsimple_expr4UINT [uint=1]; simple_expr1 expression
+ ID [id=L1]: ID [id=x]ASSIGNOP  vi variable assignID [id=x]PLUS  vitermsimple_expr4UINT [uint=1]; simple_expr1 expression
  DECLARE dd
  INTEGER ID [id=y]
  DO dlID [id=y]ASSIGNOP  vi variable assignUINT [uint=1]; termsimple_expr1 expression
  DECLARE dd
  INTEGER ID [id=z]
- DO dlID [id=z]ASSIGNOP  vi variable assignID [id=x]ADDOP  vitermsimple_expr4ID [id=y];  visimple_expr1 expression
+ DO dlID [id=z]ASSIGNOP  vi variable assignID [id=x]PLUS  vitermsimple_expr4ID [id=y];  visimple_expr1 expression
  IF ID [id=z]RELOP  vitermsimple_expr2comparisonUINT [uint=10]THEN termsimple_expr2.1GOTO ID [id=L1]ELSE GOTO ID [id=L2]END 
  END [declare=declare]
  END [declare=declare]; 

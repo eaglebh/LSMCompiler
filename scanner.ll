@@ -31,13 +31,13 @@ PRINTED '[^'\n]*'
 \n { OUT("\n"); }
 {PRINTED} { OUT("STRING"); SAVE_AND_COUNT; return(token::STRING); }
 \, { OUT(","); SAVE_AND_COUNT; return(token::COMMA); }
-\; { OUT(";"); SAVE_AND_COUNT; return(token::SEMI_COLON); }
+\; { OUT(";"); SAVE_AND_COUNT; return(token::SEMICOLON); }
 \. { OUT("."); SAVE_AND_COUNT; return(token::DOT); }
-\( { OUT("("); SAVE_AND_COUNT; return(token::OPEN_PARENS); }
-\) { OUT(")"); SAVE_AND_COUNT; return(token::CLOSE_PARENS); }
-\[ { OUT("["); SAVE_AND_COUNT; return(token::OPEN_BRACK); }
-\] { OUT("]"); SAVE_AND_COUNT; return(token::CLOSE_BRACK); }
-\: { OUT(":"); SAVE_AND_COUNT; return(token::TWO_DOTS); }
+\( { OUT("("); SAVE_AND_COUNT; return(token::LPAREN); }
+\) { OUT(")"); SAVE_AND_COUNT; return(token::RPAREN); }
+\[ { OUT("["); SAVE_AND_COUNT; return(token::LBRACKET); }
+\] { OUT("]"); SAVE_AND_COUNT; return(token::RBRACKET); }
+\: { OUT(":"); SAVE_AND_COUNT; return(token::COLON); }
 program { OUT("PROGRAM"); SAVE_AND_COUNT; return(token::PROGRAM); }
 {DIGIT}+ { OUT("UINT"); SAVE_AND_COUNT; return(token::UINT); }
 if { OUT("IF"); SAVE_AND_COUNT; return(token::IF); }
@@ -61,14 +61,16 @@ write { OUT("WRITE"); SAVE_AND_COUNT; return(token::WRITE); }
 goto { OUT("GOTO"); SAVE_AND_COUNT; return(token::GOTO); }
 return { OUT("RETURN"); SAVE_AND_COUNT; return(token::RETURN); }
 not { OUT("NOT"); SAVE_AND_COUNT; return(token::NOT); }
-or { OUT("OR"); SAVE_AND_COUNT; return(token::ADDOP); }
-and { OUT("AND"); SAVE_AND_COUNT; return(token::MULOP); }
+or { OUT("OR"); SAVE_AND_COUNT; return(token::OR); }
+and { OUT("AND"); SAVE_AND_COUNT; return(token::AND); }
 false { OUT("FALSE"); SAVE_AND_COUNT; return(token::FALSE); }
 true { OUT("TRUE"); SAVE_AND_COUNT; return(token::TRUE); }
 ":=" { OUT("ASSIGNOP"); SAVE_AND_COUNT; return(token::ASSIGNOP); }
 =|<|<=|>|>=|!= { OUT("RELOP"); SAVE_AND_COUNT; return(token::RELOP); }
-\+|-|or { OUT("ADDOP"); SAVE_AND_COUNT; return(token::ADDOP); }
-\*|\/|and { OUT("MULOP"); SAVE_AND_COUNT; return(token::MULOP); }
+\+ { OUT("PLUS"); SAVE_AND_COUNT; return(token::PLUS); }
+\- { OUT("MINUS"); SAVE_AND_COUNT; return(token::MINUS); }
+\* { OUT("TIMES"); SAVE_AND_COUNT; return(token::TIMES); }
+\/ { OUT("DIV"); SAVE_AND_COUNT; return(token::DIV); }
 {LETTER} { OUT("ID"); SAVE_AND_COUNT; return(token::ID); }
 . { return token::UNKNOWN; }
 <<EOF>> { yyterminate(); }

@@ -5,7 +5,7 @@ PROGRAM ID [id=teste3]
  ARRAY UINT [uint=100]OF INTEGER ID [id=b]; 
  ARRAY UINT [uint=100]OF INTEGER ID [id=c]
  DO dlID [id=i]ASSIGNOP  vi variable assignUINT [uint=3]; termsimple_expr1 expressionID [id=j]ASSIGNOP  vi variable assignUINT [uint=4]; termsimple_expr1 expressionID [id=k]ASSIGNOP  vi variable assignUINT [uint=2]; termsimple_expr1 expression
- ID [id=a][ ID [id=i]]  vitermsimple_expr1 va variableASSIGNOP  assignID [id=a][ UINT [uint=2]MULOP ID [id=i]ADDOP  vitermsimple_expr4UINT [uint=3]] simple_expr1 vaADDOP termsimple_expr4ID [id=b][ ID [id=j]]  vitermsimple_expr1 vaADDOP simple_expr4ID [id=c][ UINT [uint=3]] termsimple_expr1 va; simple_expr1 expression
+ ID [id=a][ ID [id=i]]  vitermsimple_expr1 va variableASSIGNOP  assignID [id=a][ UINT [uint=2]TIMES ID [id=i]PLUS  vitermsimple_expr4UINT [uint=3]] simple_expr1 vaPLUS termsimple_expr4ID [id=b][ ID [id=j]]  vitermsimple_expr1 vaPLUS simple_expr4ID [id=c][ UINT [uint=3]] termsimple_expr1 va; simple_expr1 expression
  ID [id=c][ ID [id=i]]  vitermsimple_expr1 va variableASSIGNOP  assignID [id=a][ ID [id=i]]  vitermsimple_expr1 va
  END termsimple_expr1 expression[declare=declare]
  

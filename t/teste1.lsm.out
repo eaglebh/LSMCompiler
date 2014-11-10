@@ -2,8 +2,8 @@ PROGRAM ID [id=teste1]
  DECLARE dd
  REAL ID [id=a], ID [id=b], ID [id=c]
  DO dlIF ID [id=a]RELOP  vitermsimple_expr2comparisonID [id=b]THEN  vitermsimple_expr2.1
- ID [id=c]ASSIGNOP  vi variable assignID [id=a]ADDOP  vitermsimple_expr4ID [id=b]
- ELSE  visimple_expr1 expressionID [id=c]ASSIGNOP  vi variable assignID [id=a]ADDOP  vitermsimple_expr4ID [id=b]MULOP  viID [id=c]
+ ID [id=c]ASSIGNOP  vi variable assignID [id=a]PLUS  vitermsimple_expr4ID [id=b]
+ ELSE  visimple_expr1 expressionID [id=c]ASSIGNOP  vi variable assignID [id=a]MINUS  vitermsimple_expr5ID [id=b]TIMES  viID [id=c]
  END  visimple_expr1 expression
  END [declare=declare]
  

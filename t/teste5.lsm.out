@@ -8,8 +8,8 @@ PROGRAM ID [id=teste5]
  BOOLEAN ID [id=bo]
  DO dlID [id=divisor]ASSIGNOP  vi variable assignID [id=number];  vitermsimple_expr1 expressionID [id=prime]ASSIGNOP  vi variable assignTRUE ; termsimple_expr1 expression
  WHILE ID [id=prime]AND  viID [id=divisor]RELOP  vitermsimple_expr2comparisonUINT [uint=1]DO termsimple_expr2.1
- IF ( ID [id=number]MULOP  viID [id=divisor])  vitermsimple_expr1RELOP termsimple_expr2comparisonUINT [uint=0]THEN termsimple_expr2.1ID [id=prime]ASSIGNOP  vi variable assignFALSE 
- ELSE termsimple_expr1 expressionID [id=divisor]ASSIGNOP  vi variable assignID [id=divisor]ADDOP  vitermsimple_expr4UINT [uint=1]
+ IF ( ID [id=number]DIV  viID [id=divisor])  vitermsimple_expr1RELOP termsimple_expr2comparisonUINT [uint=0]THEN termsimple_expr2.1ID [id=prime]ASSIGNOP  vi variable assignFALSE 
+ ELSE termsimple_expr1 expressionID [id=divisor]ASSIGNOP  vi variable assignID [id=divisor]MINUS  vitermsimple_expr5UINT [uint=1]
  END simple_expr1 expression
  END ; 
  ID [id=nofactor]ASSIGNOP  vi variable assignID [id=prime]
