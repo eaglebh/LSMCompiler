@@ -14,7 +14,7 @@ PROGRAM ID [id=teste5]
  END ; 
  ID [id=nofactor]ASSIGNOP  vi variable assignID [id=prime]
  END  vitermsimple_expr1 expression[declare=declare]
- DO dlREAD ( ID [id=number]) ; WRITE ( ID [id=number])  vitermsimple_expr1; 
+ DO dlREAD ( ID [id=number])  vi; WRITE ( ID [id=number])  vitermsimple_expr1; 
  ID [id=checkfactor]( ID [id=number],  vitermsimple_expr1ID [id=nofactor])  vitermsimple_expr1; 
  ID [id=prime]ASSIGNOP  vi variable assignID [id=nofactor];  vitermsimple_expr1 expression
  IF ID [id=prime]THEN  vitermsimple_expr1WRITE ( STRING ) termsimple_expr1ELSE WRITE ( STRING ) termsimple_expr1END 

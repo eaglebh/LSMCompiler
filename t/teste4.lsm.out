@@ -2,7 +2,7 @@ PROGRAM ID [id=teste4]
  DECLARE dd
  INTEGER ID [id=divisor], ID [id=number]; 
  BOOLEAN ID [id=nofactor], ID [id=prime]
- DO dlREAD ( ID [id=number]) ; 
+ DO dlREAD ( ID [id=number])  vi; 
  WRITE ( ID [id=number])  vitermsimple_expr1; 
  ID [id=divisor]ASSIGNOP  vi variable assignID [id=number];  vitermsimple_expr1 expression
  ID [id=nofactor]ASSIGNOP  vi variable assignTRUE ; termsimple_expr1 expression
