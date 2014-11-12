@@ -24,12 +24,12 @@
 
     void yyerror(const char * format, ...);
 
-    extern char *yytext;
+    #define yytext scanner.yylval
 
-    t_stack *ts;
-    t_stack *aux;
-    t_stack *parameters;
-    t_stack *labels;
+    extern t_stack *ts;
+    extern t_stack *aux;
+    extern t_stack *parameters;
+    extern t_stack *labels;
 
     t_symbol *symbol1 = NULL;
     t_symbol *symbol2 = NULL;
@@ -94,169 +94,647 @@
 %token <token>      READ WRITE GOTO RETURN
 %token <token>      NOT OR AND
 %token <token>      ASSIGNOP
-%token <token>      RELOP PLUS MINUS TIMES DIV
-%token <string>     DIGIT LETTER
+%token <token>      EQL NEQ LSS GTR LEQ GEQ PLUS MINUS TIMES DIV
+%token <string>     LETTER
 %token <token>      COMMA SEMICOLON DOT LPAREN RPAREN LBRACKET RBRACKET COLON 
 %token <string>     EXP STRING
 
 /* operator precedence */
-%left '+' '-'
-%left '*' '/'
+%left PLUS MINUS
+%left TIMES DIV
 
+%nonassoc LOWER_THAN_ELSE
+%nonassoc ELSE
 
 %%
-program         : PROGRAM identifier proc_body ;
+program         : 
+    PROGRAM
+    {
+        gen_code("\tINPP\n");
+    }
+    identifier
+    {
+        symbol1 = symbol_create(strdup(yytext->string->c_str()), nl, offset); stack_push(aux, symbol1);
+    }
+    proc_body
+    {
+        gen_code("\tPARA\n");
+    }
+;
 
 proc_body       : block_stmt ;
 
-block_stmt      : DECLARE {printf("dd");} decl_list {printf("dl");} DO stmt_list END { printf("[declare=%s]",yylhs.value.string->c_str()); }
-                | DO stmt_list END { printf("[do=%s]",yylhs.value.string->c_str()); };
+block_stmt:
+    before_declare
+    optional_declare
+    DO
+    stmt_list
+    {
+        nvars = 0;
 
-decl_list       : decl 
-                | decl_list SEMICOLON decl ;
+        while (symbol1 = stack_first(ts)) {
+            if (symbol1->cat == C_PROCEDURE && symbol1->nl == nl) {
+                break;
+            }
+            if (symbol1->nl != nl) {
+                break;
+            }
 
-decl            : variable_decl 
-                | proc_decl;
+            stack_pop(ts);
+            if (symbol1->cat == C_VARIABLE)
+                nvars++;
+        }
+        if (nvars)
+            gen_code("\tDMEM %d\n", nvars);
+        if (symbol1) {
+            gen_code("\tRTPR %d, %d\n", nl, symbol1->nParameter);
+        }
+        nl--;
+    }
+    END
+;
 
-variable_decl   : type ident_list ;
+before_declare : /* empty */ {nl++; } ;
 
-ident_list      : identifier 
-                | ident_list COMMA identifier ;
+optional_declare: /* empty */
+                |DECLARE decl_list ;
 
-type            : simple_type 
-                | array_type;
+decl_list   : decl 
+            | decl_list SEMICOLON decl ;
 
-simple_type     : INTEGER  
-                | REAL 
-                | BOOLEAN 
-                | CHAR 
-                | LABEL ;
+decl        :
+            {
+                while (symbol1 = stack_pop(aux));
+                offset = 0;
+            } 
+            variable_decl
+            {
+                gen_code("\tDSVS ");
+                symbol1 = symbol_create_label(write_label());
+                gen_code("\n");
+                stack_push(labels, symbol1);
+            }
+            |   
+            { 
+                nl++; offset = 0; 
+            }
+            proc_decl
+            { 
+                nl--; 
+                symbol1 = stack_pop(labels);
+                if(symbol1)
+                    gen_code("R%03d:\tNADA\n", symbol1->label);
+            }
+;
+
+variable_decl:    
+    type ident_list 
+    {
+        if (aux->size)
+            gen_code("\tAMEM %d\n", aux->size);
+
+        nvars = aux->size;
+        while (symbol1 = stack_pop(aux)) {
+            symbol1->cat = C_VARIABLE;
+            stack_push(ts, symbol1);
+        }
+    }
+ ;
+
+ident_list:
+    identifier
+    {
+        if (symbol2 && symbol2->nl == nl) {
+            yyerror("Variável já declarada.");
+        }
+
+        if (is_label) {
+            symbol1 = symbol_create_label(label);
+            label++;
+            strcpy(symbol1->id, strdup(yytext->string->c_str()));
+            stack_push(ts, symbol1);
+        } else {
+            symbol1 = symbol_create(strdup(yytext->string->c_str()), nl, offset);
+            offset++;
+            stack_push(aux, symbol1);
+        }
+    }
+    | ident_list COMMA 
+        identifier 
+        {
+            if (symbol2 && symbol2->nl == nl)
+                yyerror("Variável já declarada.");
+
+            if (is_label) {
+                symbol1 = symbol_create_label(label);
+                label++;
+                strcpy(symbol1->id, strdup(yytext->string->c_str()));
+                stack_push(ts, symbol1);
+            } else {
+                symbol1 = symbol_create(strdup(yytext->string->c_str()), nl, offset);
+                offset++;
+                stack_push(aux, symbol1);
+            }
+        }
+;
+
+type            : { is_label = 0; } simple_type
+                | { is_label = 0; } array_type
+;
+
+simple_type     : INTEGER
+                | REAL
+                | BOOLEAN
+                | CHAR
+                | { is_label = 1; } LABEL 
+;
 
 array_type      : ARRAY tamanho OF simple_type;
 
 tamanho         : integer_constant;
 
-proc_decl       : proc_header block_stmt ;
+proc_decl   : proc_header
+            {nl--;}
+            block_stmt
+            {nl++;}
+;
 
-proc_header     : PROCEDURE identifier LPAREN formal_list RPAREN
-                | PROCEDURE identifier   ;
+proc_header     : 
+    PROCEDURE 
+    {
+        write_label();
+        gen_code(":\tENPR %d\n", nl);
+    } 
+    identifier
+    {
+        if (symbol1 && symbol1->nl == nl)
+             yyerror("Procedimento já declarado.");
 
-formal_list     : parameter_decl  
-                | formal_list SEMICOLON parameter_decl ;
+        symb_proc = symbol_create_procedure(strdup(yytext->string->c_str()));
+        symb_proc->nl = nl;
+        symb_proc->label = label - 1;
+    }
+    optional_proc_params  
+;
 
-parameter_decl  : parameter_type identifier;
+optional_proc_params: /* empty */
+                    {
+                        symb_proc->nParameter = parameters->size;
+                        symb_proc->parameters = (int*)malloc(sizeof(int) * symb_proc->nParameter);
+                        int i;
+
+                        i = symb_proc->nParameter - 1;
+                        offset = -4;
+                        stack_push(ts, symb_proc);
+                        while (symbol1 = stack_pop(parameters)) {
+                            symbol1->offset = offset;
+                            offset--;
+                            stack_push(ts, symbol1);
+                            symb_proc->parameters[i] = symbol1->passage;
+                            i--;
+                        }
+                        symb_proc = NULL;
+                        offset = 0;
+                    }
+                    | LPAREN formal_list RPAREN 
+                    {
+                        symb_proc->nParameter = parameters->size;
+                        symb_proc->parameters = (int*)malloc(sizeof(int) * symb_proc->nParameter);
+                        int i;
+
+                        i = symb_proc->nParameter - 1;
+                        offset = -4;
+                        stack_push(ts, symb_proc);
+                        while (symbol1 = stack_pop(parameters)) {
+                            symbol1->offset = offset;
+                            offset--;
+                            stack_push(ts, symbol1);
+                            symb_proc->parameters[i] = symbol1->passage;
+                            i--;
+                        }
+                        symb_proc = NULL;
+                        offset = 0;
+                    }
+
+formal_list     : 
+    parameter_decl
+	{
+        if (symbol2 && symbol2->nl == nl)
+            yyerror("Variável já declarada.");
+    }  
+    | 
+    formal_list SEMICOLON parameter_decl
+    {
+        if (symbol2 && symbol2->nl == nl)
+            yyerror("Variável já declarada.");
+    }
+    ;
+
+parameter_decl:
+    parameter_type identifier
+    {
+        symbol1 = symbol_create(strdup(yytext->string->c_str()), nl, offset);
+        offset++;
+        stack_push(aux, symbol1);
+
+        symbol1->cat = C_PARAMETER;
+        symbol1->passage = P_VALUE;
+        stack_push(parameters, symbol1);
+    }
+;
 
 parameter_type  : type 
-                | proc_signature;
+                | proc_signature ;
 
-proc_signature  : PROCEDURE identifier LPAREN type_list RPAREN 
-                | PROCEDURE identifier;
+proc_signature  : PROCEDURE identifier LPAREN type_list RPAREN
+                | PROCEDURE identifier ;
 
 type_list       : parameter_type 
-                | type_list COMMA parameter_type;
+                | type_list COMMA parameter_type ;
 
-stmt_list       : stmt 
+stmt_list       : stmt
                 | stmt_list SEMICOLON stmt ;
 
-stmt            : identifier COLON unlabelled_stmt 
-                | unlabelled_stmt;
+stmt            : identifier 
+                {
+            //        symbol1 = stack_find(ts, yytext);
+                    symbol1->nl = nl;
+                    if (symbol1) {
+                        gen_code("R%03d:\tENRT %d %d\n", symbol1->label, nl, nvars);
+                    } else {
+                        yyerror("label não declarado.\n");
+                    }
+                } COLON unlabelled_stmt
+                | unlabelled_stmt
+;
 
 label           : identifier;
 
-unlabelled_stmt : assign_stmt 
-                | if_stmt 
-                | loop_stmt 
-                | read_stmt 
-                | write_stmt
-                | goto_stmt 
-                | proc_stmt 
-                | return_stmt 
-                | block_stmt;
+unlabelled_stmt : assign_stmt
+                    | if_stmt
+                    | 
+                    {
+                        symbol1 = symbol_create(strdup(""), 0, 0);
+                        symbol1->label = write_label();
+                        gen_code(":\tNADA\n");
+                        stack_push(labels, symbol1);
+                    } 
+                    loop_stmt 
+                    | read_stmt
+                    | write_stmt
+                    | goto_stmt
+                    | proc_stmt
+                    | return_stmt 
+                    | block_stmt
+;
 
-assign_stmt     : variable {printf(" variable");} ASSIGNOP {printf(" assign");} expression {printf(" expression");};
+assign_stmt     :
+                variable
+                {
+                    symb_atr = symbol_cpy(symb_atr, symbol1);
+                }
+                ASSIGNOP expression
+                {
+                    if (!symb_atr)
+                        yyerror("variable nao declarada.");
 
-variable        : identifier {printf(" vi");}
-                | array_element {printf(" va");};
+                    if (symb_atr->cat == C_PARAMETER && symb_atr->passage == P_ADDRESS) {
+                        gen_code("\tARMI %d, %d # %s\n", symb_atr->nl, symb_atr->offset, symb_atr->id);
+                    } else
+                        gen_code("\tARMZ %d, %d # %s\n", symb_atr->nl, symb_atr->offset, symb_atr->id);
+                }
+;
 
-variable_list   : variable 
-                | variable_list COMMA variable ;                
+variable:
+    identifier
+    | array_element
+;
+
+variable_list   :
+    {
+        if (read) {
+            gen_code("\tLEIT\n");
+        }
+    }
+    variable
+    {
+        if (read) {
+            if (!symbol1)
+                yyerror("variable nao declarada.");
+            if (symbol1->cat == C_PARAMETER && symbol1->passage == P_ADDRESS) {
+                gen_code("\tARMI %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+            } else
+                gen_code("\tARMZ %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+        }
+    }
+    | variable_list COMMA 
+    {
+        if (read) {
+            gen_code("\tLEIT\n");
+        }
+    }
+    variable
+    {
+        if (read) {
+            if (!symbol1)
+                yyerror("variable nao declarada.");
+            if (symbol1->cat == C_PARAMETER && symbol1->passage == P_ADDRESS) {
+                gen_code("\tARMI %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+            } else
+                gen_code("\tARMZ %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+        }
+    }
+;
 
 array_element   : identifier LBRACKET expression RBRACKET ;
 
-if_stmt         : IF condition THEN stmt_list END    
-                | IF condition THEN stmt_list ELSE stmt_list END;
+if_stmt:
+    IF condition
+    THEN stmt_list
+    {
+        symbol1 = symbol_create(strdup(""), 0, 0);
+        gen_code("\tDSVS ");
+        symbol1->label = write_label();
+        gen_code("\n");
+        symbol2 = stack_pop(labels);
+        gen_code("R%03d:\tNADA\n", symbol2->label);
+        stack_push(labels, symbol1);
+    }
+    %prec LOWER_THAN_ELSE
+    {
+        symbol1 = stack_pop(labels);
+        gen_code("R%03d:\tNADA\n", symbol1->label);
+    }
+    END
+    |
+    IF condition
+    THEN stmt_list
+    {
+        symbol1 = symbol_create(strdup(""), 0, 0);
+        gen_code("\tDSVS ");
+        symbol1->label = write_label();
+        gen_code("\n");
+        symbol2 = stack_pop(labels);
+        gen_code("R%03d:\tNADA\n", symbol2->label);
+        stack_push(labels, symbol1);
+    }
+    ELSE stmt_list
+    {
+        symbol1 = stack_pop(labels);
+        gen_code("R%03d:\tNADA\n", symbol1->label);
+    }
+    END
+;
 
-condition       : expression;
+condition: 
+    expression 
+    {
+        symbol1 = symbol_create(strdup(""), 0, 0);
+        gen_code("\tDSVF ");
+        symbol1->label = write_label();
+        gen_code("\n");
+        stack_push(labels, symbol1);
+    }
+;
 
-loop_stmt       : WHILE condition DO stmt_list END
-                | DO stmt_list UNTIL condition;
+loop_stmt:  WHILE condition DO stmt_list 
+            {
+                symbol1 = stack_pop(labels);
+                symbol2 = stack_pop(labels);
+                gen_code("\tDSVS r%02d\n", symbol2->label);
+                gen_code("R%03d:\tNADA\n", symbol1->label);
+            } 
+            END
+            |
+            DO stmt_list 
+            {
+                symbol1 = stack_pop(labels);
+                symbol2 = stack_pop(labels);
+                gen_code("\tDSVS r%02d\n", symbol2->label);
+                gen_code("R%03d:\tNADA\n", symbol1->label);
+            } 
+            UNTIL condition;
 
-read_stmt       : READ LPAREN variable_list RPAREN;
+read_stmt:      
+    READ 
+    {
+        read = 1;
+    }
+    LPAREN variable_list RPAREN 
+    {
+        read = 0;
+    }
+;
 
-write_stmt      : WRITE LPAREN expr_list RPAREN;
+write_stmt:
+    WRITE
+    {
+        write = 1;
+    }
+    LPAREN expr_list RPAREN
+    {
+        write = 0;
+    }
+;
 
-goto_stmt       : GOTO label;
+goto_stmt:
+    GOTO label
+    {
+        if (symbol1) {
+            gen_code("\tDSVR r%02d, %d, %d\n", symbol1->label, symbol1->nl, nl);
+        } else {
+            yyerror("label não declarado.\n");
+        }
+    }
+;
 
-proc_stmt       : identifier LPAREN expr_list RPAREN 
-                | identifier;
+proc_stmt   : 
+            identifier 
+            {
+                if (!symbol1)
+                    yyerror("procedimento não declarado");
+
+                symb_proc = symbol_cpy(symb_proc, symbol1);
+                nparam = 0;
+            }
+            LPAREN expr_list RPAREN 
+            {
+                gen_code("\tCHPR R%03d, %d\n", symb_proc->label, nl);
+                symb_proc = NULL;
+            }
+            | 
+            identifier
+            {
+                if (!symbol1)
+                    yyerror("procedimento não declarado");
+
+                symb_proc = symbol_cpy(symb_proc, symbol1);
+                nparam = 0;
+            
+                gen_code("\tCHPR R%03d, %d\n", symb_proc->label, nl);
+                symb_proc = NULL;
+            }
+;
 
 return_stmt     : RETURN;
 
-expr_list       : expression  
-                | expr_list COMMA expression;
-
-expression      : simple_expr {printf("simple_expr1");}
-                | simple_expr {printf("simple_expr2");} comparison {printf("comparison");} simple_expr {printf("simple_expr2.1");} ;
-
-simple_expr     : term {printf("term");}
-                | simple_expr {printf("simple_expr4");} PLUS term
-                | simple_expr {printf("simple_expr5");} MINUS term
-                | simple_expr {printf("simple_expr6");} OR term
-                ;
-
-term            : factor_a 
-                | term TIMES factor_a 
-                | term DIV factor_a 
-                | term AND factor_a 
-                ;
-
-factor_a        : factor 
-                | NOT factor 
-                | PLUS factor 
-                | MINUS factor 
-                | OR factor 
+expr_list:
+    expression
+    {
+        if (write)
+            gen_code("\tIMPR\n");
+    }
+    |
+    expr_list COMMA
+    expression
+    {
+        if (write)
+            gen_code("\tIMPR\n");
+    }
 ;
 
-factor          : variable 
-                | constant 
-                | LPAREN expression RPAREN ;
+
+expression:
+    simple_expr
+    | simple_expr EQL simple_expr { gen_code("\tCMIG\n"); }
+    | simple_expr NEQ simple_expr { gen_code("\tCMDG\n"); }
+    | simple_expr LSS simple_expr { gen_code("\tCMME\n"); }
+    | simple_expr GTR simple_expr { gen_code("\tCMMA\n"); }
+    | simple_expr LEQ simple_expr { gen_code("\tCMEG\n"); }
+    | simple_expr GEQ simple_expr { gen_code("\tCMAG\n"); }
+;
+
+simple_expr:
+    term
+    | simple_expr PLUS  term { gen_code("\tSOMA\n"); }
+    | simple_expr MINUS term { gen_code("\tSUBT\n"); }
+    | simple_expr OR    term { gen_code("\tDISJ\n"); }
+;
+
+term:
+    factor_a
+    | term TIMES factor_a { gen_code("\tMULT\n"); }
+    | term DIV   factor_a { gen_code("\tDIVI\n"); }
+    | term AND   factor_a { gen_code("\tCONJ\n"); }
+;
+
+factor_a:   factor 
+            | NOT factor { gen_code("\tNEGA\n"); }
+            | PLUS factor
+            | MINUS factor { gen_code("\tINVR\n"); }
+
+;
+
+factor:
+    variable
+    {
+//        symbol1 = stack_find(ts, yytext);
+        if (!symbol1)
+            yyerror("variável não declarada %s.", yytext);
+
+        if (symb_proc && nparam >= symb_proc->nParameter)
+            yyerror("procedimento %s chamado com número inválido de parâmetros %d de %d.", symb_proc->id, nparam, symb_proc->nParameter);
+
+        if (symb_proc && symb_proc->parameters[nparam] == P_ADDRESS) {
+            if (symbol1->cat == C_VARIABLE) {
+                gen_code("\tCREN %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+            }else if (symbol1->cat == C_PARAMETER) {
+                if (symbol1->passage == P_VALUE) {
+                    gen_code("\tCREN %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                } else { 
+                    if (symbol1->passage == P_ADDRESS) {
+                        gen_code("\tCRVL %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                    }
+                }
+            }
+            nparam++;
+        } else {
+            if (symbol1->cat == C_VARIABLE){
+                gen_code("\tCRVL %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+            } else {
+                if (symbol1->cat == C_PARAMETER) {
+                    if (symbol1->passage == P_VALUE){
+                        gen_code("\tCRVL %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                    } else {
+                        if (symbol1->passage == P_ADDRESS) {
+                            gen_code("\tCRVI %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    | constant
+    {
+        if (symb_proc && symb_proc->parameters[nparam] == P_ADDRESS)
+            yyerror("parâmetro inteiro passado por referência.");
+        if (symb_proc && nparam >= symb_proc->nParameter)
+            yyerror("procedimento chamado com número inválido de parâmetros.");
+
+        gen_code("\tCRCT %s\n", const_value);
+    }
+    | LPAREN expression RPAREN    
+;
 
 constant        : integer_constant 
                 | real_constant 
                 | char_constant 
                 | boolean_constant ;
 
-comparison      : RELOP;
+boolean_constant: FALSE { const_value = strdup("0"); }
+                | TRUE { const_value = strdup("1"); } ;
 
-boolean_constant: FALSE 
-                | TRUE;
+integer_constant: unsigned_integer ;
 
-integer_constant: unsigned_integer;
-
-unsigned_integer: UINT { printf("[uint=%s]",yylhs.value.string->c_str()); };
+unsigned_integer: UINT { const_value = strdup(yytext->string->c_str()); const_number = strtol(const_value, NULL, 10); } ;
 
 real_constant   : unsigned_real;
 
-unsigned_real   : unsigned_integer DOT unsigned_integer scale_factor
-                | unsigned_integer DOT unsigned_integer
-                | unsigned_integer scale_factor ;
+unsigned_real   :   unsigned_integer 
+                    DOT  
+                    { 
+                        integer_part = const_number; 
+                    } 
+                    unsigned_integer 
+                    { 
+                        fractional_part = const_number; 
+                        fractional_part_length = strlen(const_value); 
+                        coefficient = integer_part + (fractional_part/(10^fractional_part_length)); 
+                        exponent = 0;
+                    } 
+                    optional_scale_factor
+                    { 
+                        snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent)); 
+                    }
+                |   unsigned_integer 
+                    { 
+                        coefficient = const_number; 
+                    } 
+                    scale_factor 
+                    { 
+                        snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent)); 
+                    } 
+;
 
-scale_factor    : "E" "+" unsigned_integer
-                | "E" "-" unsigned_integer;
+optional_scale_factor:
+                        |   scale_factor 
+                            { 
+                                snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent)); 
+                            }
 
-char_constant   : STRING  ;
+scale_factor    : "E" PLUS unsigned_integer { exponent = const_number; }
+                | "E" MINUS unsigned_integer { exponent = -const_number; } ;
 
-identifier      : ID { printf("[id=%s]",yylhs.value.string->c_str()); } ;
+char_constant   : STRING { const_value = strdup(yytext->string->c_str()); } ;                
+
+identifier:
+    ID
+    {
+        symbol1 = stack_find(ts, yytext->string->c_str());
+        symbol2 = stack_find(aux, yytext->string->c_str());
+    }
+;
+
 %%
 
 void yy::LSMParser::error( const std::string &err_message )

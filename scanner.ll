@@ -11,7 +11,8 @@ using namespace yy;
 typedef LSMParser::token token;
 
 #define SAVE_AND_COUNT { yylval->string = new std::string(yytext, yyleng); }
-#define OUT(STR) printf("%s ", STR);
+//#define OUT(STR) printf("%s ", STR);
+#define OUT(STR) ;
 #define TOKEN(t) (yylval.token = t)
 
 %}
@@ -66,7 +67,12 @@ and { OUT("AND"); SAVE_AND_COUNT; return(token::AND); }
 false { OUT("FALSE"); SAVE_AND_COUNT; return(token::FALSE); }
 true { OUT("TRUE"); SAVE_AND_COUNT; return(token::TRUE); }
 ":=" { OUT("ASSIGNOP"); SAVE_AND_COUNT; return(token::ASSIGNOP); }
-=|<|<=|>|>=|!= { OUT("RELOP"); SAVE_AND_COUNT; return(token::RELOP); }
+"="  { OUT("EQL"); SAVE_AND_COUNT; return(token::EQL); }
+"<"  { OUT("LSS"); SAVE_AND_COUNT; return(token::LSS); }
+"<=" { OUT("LEQ"); SAVE_AND_COUNT; return(token::LEQ); }
+">"  { OUT("GTR"); SAVE_AND_COUNT; return(token::GTR); }
+">=" { OUT("GEQ"); SAVE_AND_COUNT; return(token::GEQ); }
+"!=" { OUT("NEQ"); SAVE_AND_COUNT; return(token::NEQ); }
 \+ { OUT("PLUS"); SAVE_AND_COUNT; return(token::PLUS); }
 \- { OUT("MINUS"); SAVE_AND_COUNT; return(token::MINUS); }
 \* { OUT("TIMES"); SAVE_AND_COUNT; return(token::TIMES); }

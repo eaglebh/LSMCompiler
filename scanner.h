@@ -15,9 +15,9 @@ class LSMScanner : public yyFlexLexer {
             return( yylex() );
         }
 
-    private:
-    int yylex();
     yy::LSMParser::semantic_type *yylval;
+    int yylex();
+    
 };
 
 #endif
