@@ -1,18 +1,45 @@
-PROGRAM ID [id=test6]
- DECLARE dd
- BOOLEAN ID [id=b]; 
- PROCEDURE ID [id=p]( PROCEDURE ID [id=r]ID [id=ff]) 
- DECLARE dd
- INTEGER ID [id=x]; 
- PROCEDURE ID [id=q]DO WRITE ( ID [id=x])  vitermsimple_expr1END [do=do]
- DO dlIF ID [id=b]THEN  vitermsimple_expr1ID [id=x]ASSIGNOP  vi variable assignUINT [uint=5]ELSE termsimple_expr1 expressionID [id=x]ASSIGNOP  vi variable assignUINT [uint=0]END termsimple_expr1 expression; 
- ID [id=b]ASSIGNOP  vi variable assignNOT ID [id=b];  vitermsimple_expr1 expression
- IF ID [id=b]THEN  vitermsimple_expr1ID [id=p]( ID [id=q])  vitermsimple_expr1END ; 
- ID [id=ff]
- END [declare=declare]; 
- PROCEDURE ID [id=r]DO WRITE ( STRING ) termsimple_expr1END [do=do]
- DO dlWRITE ( STRING ) termsimple_expr1; WRITE ( STRING ) termsimple_expr1; 
- ID [id=b]ASSIGNOP  vi variable assignFALSE ; termsimple_expr1 expression
- ID [id=p]( ID [id=r])  vitermsimple_expr1
- END [declare=declare]
- 
+	INPP
+	AMEM 1
+	DSVS R000
+R001:	ENPR 1
+	AMEM 1
+	DSVS R002
+R003:	ENPR 2
+	CRVL 1, 0 # x
+	IMPR
+	RTPR 2, 0
+R002:	NADA
+	CRVL 0, 0 # b
+	DSVF R004
+	CRCT 5
+	ARMZ 1, 0 # x
+	DSVS R005
+R004:	NADA
+	CRCT 0
+	ARMZ 1, 0 # x
+R005:	NADA
+	CRVL 0, 0 # b
+	NEGA
+	ARMZ 0, 0 # b
+	CRVL 0, 0 # b
+	DSVF R006
+	CHPR R001, 1
+	DSVS R007
+R006:	NADA
+R007:	NADA
+	CHPR R000, 1
+	RTPR 1, 0
+R000:	NADA
+R008:	ENPR 1
+	CRCT '.'
+	IMPR
+	RTPR 1, 0
+	CRCT 'x'
+	IMPR
+	CRCT '='
+	IMPR
+	CRCT 0
+	ARMZ 0, 0 # b
+	CHPR R001, 0
+	RTPR 0, 0
+	PARA

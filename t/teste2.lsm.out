@@ -1,11 +1,48 @@
-PROGRAM ID [id=teste2]
- DECLARE dd
- INTEGER ID [id=i], ID [id=j], ID [id=k]; 
- BOOLEAN ID [id=b]
- DO dlID [id=i]ASSIGNOP  vi variable assignUINT [uint=4]TIMES ( UINT [uint=5]MINUS termsimple_expr5UINT [uint=3]) simple_expr1TIMES ( MINUS UINT [uint=10]) termsimple_expr1DIV UINT [uint=50]; termsimple_expr1 expression
- ID [id=j]ASSIGNOP  vi variable assignID [id=i]TIMES  viUINT [uint=88]; termsimple_expr1 expression
- ID [id=k]ASSIGNOP  vi variable assignID [id=i]TIMES  viID [id=j]DIV  viID [id=k];  vitermsimple_expr1 expressionID [id=k]ASSIGNOP  vi variable assignMINUS UINT [uint=4]PLUS termsimple_expr4UINT [uint=3]; simple_expr1 expression
- ID [id=b]ASSIGNOP  vi variable assignNOT FALSE ; termsimple_expr1 expression
- ID [id=b]ASSIGNOP  vi variable assign( UINT [uint=4]PLUS termsimple_expr4( UINT [uint=3]MINUS termsimple_expr5UINT [uint=7]) simple_expr1RELOP simple_expr2comparisonUINT [uint=0]) termsimple_expr2.1OR termsimple_expr6UINT [uint=1]RELOP simple_expr2comparisonUINT [uint=4]
- END termsimple_expr2.1 expression[declare=declare]
- 
+	INPP
+	AMEM 3
+	DSVS R000
+	AMEM 1
+	DSVS R001
+	CRCT 4
+	CRCT 5
+	CRCT 3
+	SUBT
+	MULT
+	CRCT 10
+	INVR
+	MULT
+	CRCT 50
+	DIVI
+	ARMZ 0, 0 # i
+	CRVL 0, 0 # i
+	CRCT 88
+	MULT
+	ARMZ 0, 1 # j
+	CRVL 0, 0 # i
+	CRVL 0, 1 # j
+	MULT
+	CRVL 0, 2 # k
+	DIVI
+	ARMZ 0, 2 # k
+	CRCT 4
+	INVR
+	CRCT 3
+	SOMA
+	ARMZ 0, 2 # k
+	CRCT 0
+	NEGA
+	ARMZ 0, 0 # b
+	CRCT 4
+	CRCT 3
+	CRCT 7
+	SUBT
+	SOMA
+	CRCT 0
+	CMIG
+	CRCT 1
+	DISJ
+	CRCT 4
+	CMDG
+	ARMZ 0, 0 # b
+	DMEM 4
+	PARA
