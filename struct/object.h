@@ -16,7 +16,8 @@
 #define P_VALUE 0
 #define P_ADDRESS 1
 
-typedef struct t_object {
+class Symbol {
+public:
     char id[MAX_ID_SIZE];
     int nl;
     int offset;
@@ -25,18 +26,18 @@ typedef struct t_object {
     int passage;
     int nParameter;
     int *parameters;
-} t_object;
+};
 
-t_object* object_create(char *id, int nl, int offset);
-t_object* object_create_procedure(char *id);
-t_object* object_create_function(char *id);
-t_object* object_create_label(int label);
-t_object* object_cpy(t_object *object1, t_object *object2);
+Symbol* object_create(char *id, int nl, int offset);
+Symbol* object_create_procedure(char *id);
+Symbol* object_create_function(char *id);
+Symbol* object_create_label(int label);
+Symbol* object_cpy(Symbol *object1, Symbol *object2);
 void object_write(void *p);
-void object_destroy(t_object *object);
-int object_cmp_id(t_object *object1, t_object *object2);
-int object_cmp_nl(t_object *object1, t_object *object2);
-int object_cmp(t_object *object1, t_object *object2);
+void object_destroy(Symbol *object);
+int object_cmp_id(Symbol *object1, Symbol *object2);
+int object_cmp_nl(Symbol *object1, Symbol *object2);
+int object_cmp(Symbol *object1, Symbol *object2);
 
 #endif
 

@@ -1,7 +1,7 @@
 #include "object.h"
 
-t_object *object_create(char *id, int nl, int offset) {
-    t_object *o = (t_object*)malloc(sizeof(t_object));
+Symbol *object_create(char *id, int nl, int offset) {
+    Symbol *o = new Symbol;
     if(!o) return NULL;
     strcpy(o->id, id);
     o->nl = nl;
@@ -9,33 +9,33 @@ t_object *object_create(char *id, int nl, int offset) {
     return o;
 }
 
-t_object *object_create_procedure(char *id) {
-    t_object *o = (t_object*)malloc(sizeof(t_object));
+Symbol *object_create_procedure(char *id) {
+    Symbol *o = new Symbol;
     if(!o) return NULL;
     strcpy(o->id, id);
     o->cat = C_PROCEDURE;
     return o;
 }
 
-t_object *object_create_function(char *id) {
-    t_object *o = (t_object*)malloc(sizeof(t_object));
+Symbol *object_create_function(char *id) {
+    Symbol *o = new Symbol;
     if(!o) return NULL;
     strcpy(o->id, id);
     o->cat = C_FUNCTION;
     return o;
 }
 
-t_object *object_create_label(int label) {
-    t_object *o = (t_object*)malloc(sizeof(t_object));
+Symbol *object_create_label(int label) {
+    Symbol *o = new Symbol;
     if(!o) return NULL;
     o->label = label;
     o->cat = C_LABEL;
     return o;
 }
 
-t_object *object_cpy(t_object *object1, t_object *object2) {
+Symbol *object_cpy(Symbol *object1, Symbol *object2) {
     if(!object1)
-        object1 = (t_object*)malloc(sizeof(t_object));
+        object1 = new Symbol;
     if(!object1 || !object2)
         return NULL;
 
@@ -52,7 +52,7 @@ t_object *object_cpy(t_object *object1, t_object *object2) {
 }
 
 void object_write(void *p) {
-    t_object *object =(t_object *) p;
+    Symbol *object =(Symbol *) p;
     printf("\n");
     printf("id: %s " , object->id);
     printf("cat: %d ", object->cat);
@@ -66,19 +66,19 @@ void object_write(void *p) {
     }
 }
 
-void object_destroy(t_object *object) {
+void object_destroy(Symbol *object) {
     free(object);
 }
 
-int object_cmp_id(t_object *object1, t_object *object2) {
+int object_cmp_id(Symbol *object1, Symbol *object2) {
     return strcmp(object1->id, object2->id);
 }
 
-int object_cmp_nl(t_object *object1, t_object *object2) {
+int object_cmp_nl(Symbol *object1, Symbol *object2) {
     return(object1->nl == object2->nl);
 }
 
-int object_cmp(t_object *object1, t_object *object2) {
+int object_cmp(Symbol *object1, Symbol *object2) {
     return(object_cmp_id(object1, object2));
 }
 

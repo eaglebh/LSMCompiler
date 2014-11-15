@@ -1,9 +1,22 @@
-PROGRAM ID [id=teste1]
- DECLARE dd
- REAL ID [id=a], ID [id=b], ID [id=c]
- DO dlIF ID [id=a]RELOP  vitermsimple_expr2comparisonID [id=b]THEN  vitermsimple_expr2.1
- ID [id=c]ASSIGNOP  vi variable assignID [id=a]PLUS  vitermsimple_expr4ID [id=b]
- ELSE  visimple_expr1 expressionID [id=c]ASSIGNOP  vi variable assignID [id=a]MINUS  vitermsimple_expr5ID [id=b]TIMES  viID [id=c]
- END  visimple_expr1 expression
- END [declare=declare]
- 
+	INPP
+	AMEM 3
+	DSVS R000
+	CRVL 0, 0 # a
+	CRVL 0, 1 # b
+	CMMA
+	DSVF R001
+	CRVL 0, 0 # a
+	CRVL 0, 1 # b
+	SOMA
+	ARMZ 0, 2 # c
+	DSVS R002
+R001:	NADA
+	CRVL 0, 0 # a
+	CRVL 0, 1 # b
+	CRVL 0, 2 # c
+	MULT
+	SUBT
+	ARMZ 0, 2 # c
+R002:	NADA
+	DMEM 3
+	PARA

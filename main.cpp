@@ -11,17 +11,17 @@
 
 using namespace std;
 
-t_list *ts;
-t_list *aux;
-t_list *parameters;
-t_list *labels;
+SymbolStack *ts;
+SymbolStack *aux;
+SymbolStack *parameters;
+SymbolStack *labels;
 
 int main(int argc, char ** argv)
 {
-	ts = list_create();
-    aux  = list_create();
-    parameters = list_create();
-    labels = list_create();
+	ts = new SymbolStack();
+    aux  = new SymbolStack();
+    parameters = new SymbolStack();
+    labels = new SymbolStack();
 
 	LSMScanner scanner;
 	yy::LSMParser parser(scanner);

@@ -1,16 +1,50 @@
-PROGRAM ID [id=teste4]
- DECLARE dd
- INTEGER ID [id=divisor], ID [id=number]; 
- BOOLEAN ID [id=nofactor], ID [id=prime]
- DO dlREAD ( ID [id=number])  vi; 
- WRITE ( ID [id=number])  vitermsimple_expr1; 
- ID [id=divisor]ASSIGNOP  vi variable assignID [id=number];  vitermsimple_expr1 expression
- ID [id=nofactor]ASSIGNOP  vi variable assignTRUE ; termsimple_expr1 expression
- WHILE ID [id=nofactor]AND  vi( ID [id=divisor]RELOP  vitermsimple_expr2comparisonUINT [uint=1]) termsimple_expr2.1DO termsimple_expr1
- IF ( ID [id=number]DIV  viID [id=divisor])  vitermsimple_expr1RELOP termsimple_expr2comparisonUINT [uint=0]THEN termsimple_expr2.1ID [id=nofactor]ASSIGNOP  vi variable assignFALSE 
- ELSE termsimple_expr1 expressionID [id=divisor]ASSIGNOP  vi variable assignID [id=divisor]MINUS  vitermsimple_expr5UINT [uint=1]
- END simple_expr1 expression
- END ; 
- ID [id=prime]ASSIGNOP  vi variable assignID [id=nofactor];  vitermsimple_expr1 expression
- IF ID [id=prime]THEN  vitermsimple_expr1WRITE ( STRING ) termsimple_expr1ELSE WRITE ( STRING ) termsimple_expr1END 
- END [declare=declare]
+	INPP
+	AMEM 2
+	DSVS R000
+	AMEM 2
+	DSVS R001
+	LEIT
+	ARMZ 0, 1 # number
+	CRVL 0, 1 # number
+	IMPR
+	CRVL 0, 1 # number
+	ARMZ 0, 0 # divisor
+	CRCT 1
+	ARMZ 0, 0 # nofactor
+R002:	NADA
+	CRVL 0, 0 # nofactor
+	CRVL 0, 0 # divisor
+	CRCT 1
+	CMMA
+	CONJ
+	DSVF R003
+	CRVL 0, 1 # number
+	CRVL 0, 0 # divisor
+	DIVI
+	CRCT 0
+	CMIG
+	DSVF R004
+	CRCT 0
+	ARMZ 0, 0 # nofactor
+	DSVS R005
+R004:	NADA
+	CRVL 0, 0 # divisor
+	CRCT 1
+	SUBT
+	ARMZ 0, 0 # divisor
+R005:	NADA
+	DSVS r02
+R003:	NADA
+	CRVL 0, 0 # nofactor
+	ARMZ 0, 1 # prime
+	CRVL 0, 1 # prime
+	DSVF R006
+	CRCT 'S'
+	IMPR
+	DSVS R007
+R006:	NADA
+	CRCT 'N'
+	IMPR
+R007:	NADA
+	DMEM 4
+	PARA

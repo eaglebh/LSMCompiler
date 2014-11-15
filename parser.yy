@@ -10,12 +10,11 @@
 %parse-param { LSMScanner  &scanner  }
 
 %code{
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <string.h>
-    #include <stdarg.h>
-    #include "struct/symbol.h"
-    #include "struct/stack.h"
+    #include <cstdio>
+    #include <cstdlib>
+    #include <cstdarg>
+    #include "struct/object.h"
+    #include "struct/list.h"
 
     #include "scanner.h"
 
@@ -26,23 +25,23 @@
 
     #define yytext scanner.yylval
 
-    extern t_stack *ts;
-    extern t_stack *aux;
-    extern t_stack *parameters;
-    extern t_stack *labels;
+    extern SymbolStack *ts;
+    extern SymbolStack *aux;
+    extern SymbolStack *parameters;
+    extern SymbolStack *labels;
 
-    t_symbol *symbol1 = NULL;
-    t_symbol *symbol2 = NULL;
-    t_symbol *symb_atr = NULL;
-    t_symbol *symb_proc = NULL;
+    Symbol *symbol1 = NULL;
+    Symbol *symbol2 = NULL;
+    Symbol *symb_atr = NULL;
+    Symbol *symb_proc = NULL;
 
     int nl = -1;
     int offset = 0;
-    int nvars;        // Número de variáveis locais
-    int nparam;        // Número do parâmetro
+    int nvars;        // variaveis locais
+    int nparam;        // numero de parametros
     int label = 0;
-    int write = 0;  // Variável condicional para indicar o uso de write()
-    int read = 0;  // Variável condicional para indicar o uso de read()
+    int write = 0;  // indica uso de write
+    int read = 0;  // indica uso de read
     int is_label = 0;
 
     char *const_value = NULL;
@@ -89,32 +88,32 @@
 %token UNKNOWN
 %token <uint_type>  UINT
 %token <string>     ID
-%token <string>     IF WHILE DO LABEL
-%token <string>     DECLARE END INTEGER REAL BOOLEAN CHAR ARRAY OF PROCEDURE THEN ELSE UNTIL FALSE TRUE
+%token <token>     IF WHILE DO LABEL
+%token <token>     DECLARE END INTEGER REAL BOOLEAN CHAR ARRAY OF PROCEDURE THEN ELSE UNTIL FALSE TRUE
 %token <token>      READ WRITE GOTO RETURN
 %token <token>      NOT OR AND
 %token <token>      ASSIGNOP
 %token <token>      EQL NEQ LSS GTR LEQ GEQ PLUS MINUS TIMES DIV
-%token <string>     LETTER
-%token <token>      COMMA SEMICOLON DOT LPAREN RPAREN LBRACKET RBRACKET COLON 
-%token <string>     EXP STRING
+%token <token>      COMMA SEMICOLON DOT LPAREN RPAREN LBRACKET RBRACKET COLON EXP
+%token <string>     STRING
 
-/* operator precedence */
+/* precedencia de operadores */
 %left PLUS MINUS
 %left TIMES DIV
 
+/* if/else */
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ELSE
 
 %%
-program         : 
+program         :
     PROGRAM
     {
         gen_code("\tINPP\n");
     }
     identifier
     {
-        symbol1 = symbol_create(strdup(yytext->string->c_str()), nl, offset); stack_push(aux, symbol1);
+        symbol1 = object_create(strdup(yytext->string->c_str()), nl, offset); aux->push(symbol1);
     }
     proc_body
     {
@@ -132,7 +131,7 @@ block_stmt:
     {
         nvars = 0;
 
-        while (symbol1 = stack_first(ts)) {
+        while ( (symbol1 = ts->top()) ) {
             if (symbol1->cat == C_PROCEDURE && symbol1->nl == nl) {
                 break;
             }
@@ -140,7 +139,7 @@ block_stmt:
                 break;
             }
 
-            stack_pop(ts);
+            ts->topPop();
             if (symbol1->cat == C_VARIABLE)
                 nvars++;
         }
@@ -159,44 +158,44 @@ before_declare : /* empty */ {nl++; } ;
 optional_declare: /* empty */
                 |DECLARE decl_list ;
 
-decl_list   : decl 
+decl_list   : decl
             | decl_list SEMICOLON decl ;
 
 decl        :
             {
-                while (symbol1 = stack_pop(aux));
+                while ( (symbol1 = aux->topPop()) );
                 offset = 0;
-            } 
+            }
             variable_decl
             {
                 gen_code("\tDSVS ");
-                symbol1 = symbol_create_label(write_label());
+                symbol1 = object_create_label(write_label());
                 gen_code("\n");
-                stack_push(labels, symbol1);
+                labels->push(symbol1);
             }
-            |   
-            { 
-                nl++; offset = 0; 
+            |
+            {
+                nl++; offset = 0;
             }
             proc_decl
-            { 
-                nl--; 
-                symbol1 = stack_pop(labels);
+            {
+                nl--;
+                symbol1 = labels->topPop();
                 if(symbol1)
                     gen_code("R%03d:\tNADA\n", symbol1->label);
             }
 ;
 
-variable_decl:    
-    type ident_list 
+variable_decl:
+    type ident_list
     {
-        if (aux->size)
-            gen_code("\tAMEM %d\n", aux->size);
+        if (aux->size())
+            gen_code("\tAMEM %d\n", aux->size());
 
-        nvars = aux->size;
-        while (symbol1 = stack_pop(aux)) {
+        nvars = aux->size();
+        while ( (symbol1 = aux->topPop()) ) {
             symbol1->cat = C_VARIABLE;
-            stack_push(ts, symbol1);
+            ts->push(symbol1);
         }
     }
  ;
@@ -209,31 +208,31 @@ ident_list:
         }
 
         if (is_label) {
-            symbol1 = symbol_create_label(label);
+            symbol1 = object_create_label(label);
             label++;
             strcpy(symbol1->id, strdup(yytext->string->c_str()));
-            stack_push(ts, symbol1);
+            ts->push(symbol1);
         } else {
-            symbol1 = symbol_create(strdup(yytext->string->c_str()), nl, offset);
+            symbol1 = object_create(strdup(yytext->string->c_str()), nl, offset);
             offset++;
-            stack_push(aux, symbol1);
+            aux->push(symbol1);
         }
     }
-    | ident_list COMMA 
-        identifier 
+    | ident_list COMMA
+        identifier
         {
             if (symbol2 && symbol2->nl == nl)
                 yyerror("Variável já declarada.");
 
             if (is_label) {
-                symbol1 = symbol_create_label(label);
+                symbol1 = object_create_label(label);
                 label++;
                 strcpy(symbol1->id, strdup(yytext->string->c_str()));
-                stack_push(ts, symbol1);
+                ts->push(symbol1);
             } else {
-                symbol1 = symbol_create(strdup(yytext->string->c_str()), nl, offset);
+                symbol1 = object_create(strdup(yytext->string->c_str()), nl, offset);
                 offset++;
-                stack_push(aux, symbol1);
+                aux->push(symbol1);
             }
         }
 ;
@@ -246,7 +245,7 @@ simple_type     : INTEGER
                 | REAL
                 | BOOLEAN
                 | CHAR
-                | { is_label = 1; } LABEL 
+                | { is_label = 1; } LABEL
 ;
 
 array_type      : ARRAY tamanho OF simple_type;
@@ -259,56 +258,43 @@ proc_decl   : proc_header
             {nl++;}
 ;
 
-proc_header     : 
-    PROCEDURE 
+proc_header     :
+    PROCEDURE
     {
         write_label();
         gen_code(":\tENPR %d\n", nl);
-    } 
+    }
     identifier
     {
         if (symbol1 && symbol1->nl == nl)
              yyerror("Procedimento já declarado.");
 
-        symb_proc = symbol_create_procedure(strdup(yytext->string->c_str()));
+        symb_proc = object_create_procedure(strdup(yytext->string->c_str()));
         symb_proc->nl = nl;
         symb_proc->label = label - 1;
     }
-    optional_proc_params  
+    optional_proc_params
 ;
 
 optional_proc_params: /* empty */
                     {
-                        symb_proc->nParameter = parameters->size;
-                        symb_proc->parameters = (int*)malloc(sizeof(int) * symb_proc->nParameter);
-                        int i;
-
-                        i = symb_proc->nParameter - 1;
-                        offset = -4;
-                        stack_push(ts, symb_proc);
-                        while (symbol1 = stack_pop(parameters)) {
-                            symbol1->offset = offset;
-                            offset--;
-                            stack_push(ts, symbol1);
-                            symb_proc->parameters[i] = symbol1->passage;
-                            i--;
-                        }
+                        ts->push(symb_proc);
                         symb_proc = NULL;
                         offset = 0;
                     }
-                    | LPAREN formal_list RPAREN 
+                    | LPAREN formal_list RPAREN
                     {
-                        symb_proc->nParameter = parameters->size;
+                        symb_proc->nParameter = parameters->size();
                         symb_proc->parameters = (int*)malloc(sizeof(int) * symb_proc->nParameter);
                         int i;
 
                         i = symb_proc->nParameter - 1;
                         offset = -4;
-                        stack_push(ts, symb_proc);
-                        while (symbol1 = stack_pop(parameters)) {
+                        ts->push(symb_proc);
+                        while ( (symbol1 = parameters->topPop()) ) {
                             symbol1->offset = offset;
                             offset--;
-                            stack_push(ts, symbol1);
+                            ts->push(symbol1);
                             symb_proc->parameters[i] = symbol1->passage;
                             i--;
                         }
@@ -316,13 +302,13 @@ optional_proc_params: /* empty */
                         offset = 0;
                     }
 
-formal_list     : 
+formal_list     :
     parameter_decl
 	{
         if (symbol2 && symbol2->nl == nl)
             yyerror("Variável já declarada.");
-    }  
-    | 
+    }
+    |
     formal_list SEMICOLON parameter_decl
     {
         if (symbol2 && symbol2->nl == nl)
@@ -333,31 +319,31 @@ formal_list     :
 parameter_decl:
     parameter_type identifier
     {
-        symbol1 = symbol_create(strdup(yytext->string->c_str()), nl, offset);
+        symbol1 = object_create(strdup(yytext->string->c_str()), nl, offset);
         offset++;
-        stack_push(aux, symbol1);
+        aux->push(symbol1);
 
         symbol1->cat = C_PARAMETER;
-        symbol1->passage = P_VALUE;
-        stack_push(parameters, symbol1);
+        symbol1->passage = P_ADDRESS;
+        parameters->push(symbol1);
     }
 ;
 
-parameter_type  : type 
+parameter_type  : type
                 | proc_signature ;
 
 proc_signature  : PROCEDURE identifier LPAREN type_list RPAREN
                 | PROCEDURE identifier ;
 
-type_list       : parameter_type 
+type_list       : parameter_type
                 | type_list COMMA parameter_type ;
 
 stmt_list       : stmt
                 | stmt_list SEMICOLON stmt ;
 
-stmt            : identifier 
+stmt            : identifier
                 {
-            //        symbol1 = stack_find(ts, yytext);
+            //        symbol1 = list_find(ts, yytext);
                     symbol1->nl = nl;
                     if (symbol1) {
                         gen_code("R%03d:\tENRT %d %d\n", symbol1->label, nl, nvars);
@@ -372,26 +358,26 @@ label           : identifier;
 
 unlabelled_stmt : assign_stmt
                     | if_stmt
-                    | 
+                    |
                     {
-                        symbol1 = symbol_create(strdup(""), 0, 0);
+                        symbol1 = object_create(strdup(""), 0, 0);
                         symbol1->label = write_label();
                         gen_code(":\tNADA\n");
-                        stack_push(labels, symbol1);
-                    } 
-                    loop_stmt 
+                        labels->push(symbol1);
+                    }
+                    loop_stmt
                     | read_stmt
                     | write_stmt
                     | goto_stmt
                     | proc_stmt
-                    | return_stmt 
+                    | return_stmt
                     | block_stmt
 ;
 
 assign_stmt     :
                 variable
                 {
-                    symb_atr = symbol_cpy(symb_atr, symbol1);
+                    symb_atr = object_cpy(symb_atr, symbol1);
                 }
                 ASSIGNOP expression
                 {
@@ -427,7 +413,7 @@ variable_list   :
                 gen_code("\tARMZ %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
         }
     }
-    | variable_list COMMA 
+    | variable_list COMMA
     {
         if (read) {
             gen_code("\tLEIT\n");
@@ -452,17 +438,17 @@ if_stmt:
     IF condition
     THEN stmt_list
     {
-        symbol1 = symbol_create(strdup(""), 0, 0);
+        symbol1 = object_create(strdup(""), 0, 0);
         gen_code("\tDSVS ");
         symbol1->label = write_label();
         gen_code("\n");
-        symbol2 = stack_pop(labels);
+        symbol2 = labels->topPop();
         gen_code("R%03d:\tNADA\n", symbol2->label);
-        stack_push(labels, symbol1);
+        labels->push(symbol1);
     }
     %prec LOWER_THAN_ELSE
     {
-        symbol1 = stack_pop(labels);
+        symbol1 = labels->topPop();
         gen_code("R%03d:\tNADA\n", symbol1->label);
     }
     END
@@ -470,57 +456,57 @@ if_stmt:
     IF condition
     THEN stmt_list
     {
-        symbol1 = symbol_create(strdup(""), 0, 0);
+        symbol1 = object_create(strdup(""), 0, 0);
         gen_code("\tDSVS ");
         symbol1->label = write_label();
         gen_code("\n");
-        symbol2 = stack_pop(labels);
+        symbol2 = labels->topPop();
         gen_code("R%03d:\tNADA\n", symbol2->label);
-        stack_push(labels, symbol1);
+        labels->push(symbol1);
     }
     ELSE stmt_list
     {
-        symbol1 = stack_pop(labels);
+        symbol1 = labels->topPop();
         gen_code("R%03d:\tNADA\n", symbol1->label);
     }
     END
 ;
 
-condition: 
-    expression 
+condition:
+    expression
     {
-        symbol1 = symbol_create(strdup(""), 0, 0);
+        symbol1 = object_create(strdup(""), 0, 0);
         gen_code("\tDSVF ");
         symbol1->label = write_label();
         gen_code("\n");
-        stack_push(labels, symbol1);
+        labels->push(symbol1);
     }
 ;
 
-loop_stmt:  WHILE condition DO stmt_list 
+loop_stmt:  WHILE condition DO stmt_list
             {
-                symbol1 = stack_pop(labels);
-                symbol2 = stack_pop(labels);
+                symbol1 = labels->topPop();
+                symbol2 = labels->topPop();
                 gen_code("\tDSVS r%02d\n", symbol2->label);
                 gen_code("R%03d:\tNADA\n", symbol1->label);
-            } 
+            }
             END
             |
-            DO stmt_list 
+            DO stmt_list
             {
-                symbol1 = stack_pop(labels);
-                symbol2 = stack_pop(labels);
+                symbol1 = labels->topPop();
+                symbol2 = labels->topPop();
                 gen_code("\tDSVS r%02d\n", symbol2->label);
                 gen_code("R%03d:\tNADA\n", symbol1->label);
-            } 
+            }
             UNTIL condition;
 
-read_stmt:      
-    READ 
+read_stmt:
+    READ
     {
         read = 1;
     }
-    LPAREN variable_list RPAREN 
+    LPAREN variable_list RPAREN
     {
         read = 0;
     }
@@ -548,29 +534,29 @@ goto_stmt:
     }
 ;
 
-proc_stmt   : 
-            identifier 
-            {
-                if (!symbol1)
-                    yyerror("procedimento não declarado");
-
-                symb_proc = symbol_cpy(symb_proc, symbol1);
-                nparam = 0;
-            }
-            LPAREN expr_list RPAREN 
-            {
-                gen_code("\tCHPR R%03d, %d\n", symb_proc->label, nl);
-                symb_proc = NULL;
-            }
-            | 
+proc_stmt   :
             identifier
             {
                 if (!symbol1)
                     yyerror("procedimento não declarado");
 
-                symb_proc = symbol_cpy(symb_proc, symbol1);
+                symb_proc = object_cpy(symb_proc, symbol1);
                 nparam = 0;
-            
+            }
+            LPAREN expr_list RPAREN
+            {
+                gen_code("\tCHPR R%03d, %d\n", symb_proc->label, nl);
+                symb_proc = NULL;
+            }
+            |
+            identifier
+            {
+                if (!symbol1)
+                    yyerror("procedimento não declarado");
+
+                symb_proc = object_cpy(symb_proc, symbol1);
+                nparam = 0;
+
                 gen_code("\tCHPR R%03d, %d\n", symb_proc->label, nl);
                 symb_proc = NULL;
             }
@@ -618,7 +604,7 @@ term:
     | term AND   factor_a { gen_code("\tCONJ\n"); }
 ;
 
-factor_a:   factor 
+factor_a:   factor
             | NOT factor { gen_code("\tNEGA\n"); }
             | PLUS factor
             | MINUS factor { gen_code("\tINVR\n"); }
@@ -628,9 +614,9 @@ factor_a:   factor
 factor:
     variable
     {
-//        symbol1 = stack_find(ts, yytext);
+//        symbol1 = list_find(ts, yytext);
         if (!symbol1)
-            yyerror("variável não declarada %s.", yytext);
+            yyerror("variável não declarada %s.", yytext->string->c_str());
 
         if (symb_proc && nparam >= symb_proc->nParameter)
             yyerror("procedimento %s chamado com número inválido de parâmetros %d de %d.", symb_proc->id, nparam, symb_proc->nParameter);
@@ -641,7 +627,7 @@ factor:
             }else if (symbol1->cat == C_PARAMETER) {
                 if (symbol1->passage == P_VALUE) {
                     gen_code("\tCREN %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
-                } else { 
+                } else {
                     if (symbol1->passage == P_ADDRESS) {
                         gen_code("\tCRVL %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
                     }
@@ -673,12 +659,12 @@ factor:
 
         gen_code("\tCRCT %s\n", const_value);
     }
-    | LPAREN expression RPAREN    
+    | LPAREN expression RPAREN
 ;
 
-constant        : integer_constant 
-                | real_constant 
-                | char_constant 
+constant        : integer_constant
+                | real_constant
+                | char_constant
                 | boolean_constant ;
 
 boolean_constant: FALSE { const_value = strdup("0"); }
@@ -690,48 +676,48 @@ unsigned_integer: UINT { const_value = strdup(yytext->string->c_str()); const_nu
 
 real_constant   : unsigned_real;
 
-unsigned_real   :   unsigned_integer 
-                    DOT  
-                    { 
-                        integer_part = const_number; 
-                    } 
-                    unsigned_integer 
-                    { 
-                        fractional_part = const_number; 
-                        fractional_part_length = strlen(const_value); 
-                        coefficient = integer_part + (fractional_part/(10^fractional_part_length)); 
-                        exponent = 0;
-                    } 
-                    optional_scale_factor
-                    { 
-                        snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent)); 
+unsigned_real   :   unsigned_integer
+                    DOT
+                    {
+                        integer_part = const_number;
                     }
-                |   unsigned_integer 
-                    { 
-                        coefficient = const_number; 
-                    } 
-                    scale_factor 
-                    { 
-                        snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent)); 
-                    } 
+                    unsigned_integer
+                    {
+                        fractional_part = const_number;
+                        fractional_part_length = strlen(const_value);
+                        coefficient = integer_part + (fractional_part/(10^fractional_part_length));
+                        exponent = 0;
+                    }
+                    optional_scale_factor
+                    {
+                        snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent));
+                    }
+                |   unsigned_integer
+                    {
+                        coefficient = const_number;
+                    }
+                    scale_factor
+                    {
+                        snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent));
+                    }
 ;
 
 optional_scale_factor:
-                        |   scale_factor 
-                            { 
-                                snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent)); 
+                        |   scale_factor
+                            {
+                                snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent));
                             }
 
 scale_factor    : "E" PLUS unsigned_integer { exponent = const_number; }
                 | "E" MINUS unsigned_integer { exponent = -const_number; } ;
 
-char_constant   : STRING { const_value = strdup(yytext->string->c_str()); } ;                
+char_constant   : STRING { const_value = strdup(yytext->string->c_str()); } ;
 
 identifier:
     ID
     {
-        symbol1 = stack_find(ts, yytext->string->c_str());
-        symbol2 = stack_find(aux, yytext->string->c_str());
+        symbol1 = ts->find(yytext->string->c_str());
+        symbol2 = aux->find(yytext->string->c_str());
     }
 ;
 

@@ -1,22 +1,63 @@
-PROGRAM ID [id=teste5]
- DECLARE dd
- INTEGER ID [id=number], ID [id=divisor]; 
- BOOLEAN ID [id=nofactor], ID [id=prime]; 
- PROCEDURE ID [id=checkfactor]( INTEGER ID [id=number]; BOOLEAN ID [id=nofactor]) 
- DECLARE dd
- INTEGER ID [id=integer1]; 
- BOOLEAN ID [id=bo]
- DO dlID [id=divisor]ASSIGNOP  vi variable assignID [id=number];  vitermsimple_expr1 expressionID [id=prime]ASSIGNOP  vi variable assignTRUE ; termsimple_expr1 expression
- WHILE ID [id=prime]AND  viID [id=divisor]RELOP  vitermsimple_expr2comparisonUINT [uint=1]DO termsimple_expr2.1
- IF ( ID [id=number]DIV  viID [id=divisor])  vitermsimple_expr1RELOP termsimple_expr2comparisonUINT [uint=0]THEN termsimple_expr2.1ID [id=prime]ASSIGNOP  vi variable assignFALSE 
- ELSE termsimple_expr1 expressionID [id=divisor]ASSIGNOP  vi variable assignID [id=divisor]MINUS  vitermsimple_expr5UINT [uint=1]
- END simple_expr1 expression
- END ; 
- ID [id=nofactor]ASSIGNOP  vi variable assignID [id=prime]
- END  vitermsimple_expr1 expression[declare=declare]
- DO dlREAD ( ID [id=number])  vi; WRITE ( ID [id=number])  vitermsimple_expr1; 
- ID [id=checkfactor]( ID [id=number],  vitermsimple_expr1ID [id=nofactor])  vitermsimple_expr1; 
- ID [id=prime]ASSIGNOP  vi variable assignID [id=nofactor];  vitermsimple_expr1 expression
- IF ID [id=prime]THEN  vitermsimple_expr1WRITE ( STRING ) termsimple_expr1ELSE WRITE ( STRING ) termsimple_expr1END 
- END [declare=declare]
- 
+	INPP
+	AMEM 2
+	DSVS R000
+	AMEM 2
+	DSVS R001
+R002:	ENPR 1
+	AMEM 1
+	DSVS R003
+	AMEM 1
+	DSVS R004
+	CRVL 1, -5 # number
+	ARMZ 0, 1 # divisor
+	CRCT 1
+	ARMZ 0, 1 # prime
+R005:	NADA
+	CRVL 0, 1 # prime
+	CRVL 0, 1 # divisor
+	CONJ
+	CRCT 1
+	CMMA
+	DSVF R006
+	CRVL 1, -5 # number
+	CRVL 0, 1 # divisor
+	DIVI
+	CRCT 0
+	CMIG
+	DSVF R007
+	CRCT 0
+	ARMZ 0, 1 # prime
+	DSVS R008
+R007:	NADA
+	CRVL 0, 1 # divisor
+	CRCT 1
+	SUBT
+	ARMZ 0, 1 # divisor
+R008:	NADA
+	DSVS r05
+R006:	NADA
+	CRVL 0, 1 # prime
+	ARMZ 1, -4 # nofactor
+	DMEM 2
+	RTPR 1, 2
+R004:	NADA
+	LEIT
+	ARMZ 0, 0 # number
+	CRVL 0, 0 # number
+	IMPR
+	CRVL 0, 0 # number
+	CRVL 0, 0 # nofactor
+	CHPR R002, 0
+	CRVL 0, 0 # nofactor
+	ARMZ 0, 1 # prime
+	CRVL 0, 1 # prime
+	DSVF R009
+	CRCT 'S'
+	IMPR
+	DSVS R010
+R009:	NADA
+	CRCT 'N'
+	IMPR
+R010:	NADA
+	RTPR 0, 2
+	PARA
