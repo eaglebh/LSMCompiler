@@ -25,6 +25,8 @@
 
     void yyerror(const char * format, ...);
 
+    void typeError(const std::string &err_message);
+
     #define yytext scanner.yylval
 
     SymbolStack *symbolTable = new SymbolStack();
@@ -48,10 +50,10 @@
     TypeEnum current_type = voidType;
 
     char *const_value = NULL;
-    int const_number = 0;
-    int integer_part = 0;
-    int fractional_part = 0;
-    int fractional_part_length = 0;
+    int constNumber = 0;
+    int integerPart = 0;
+    int fractionalPart = 0;
+    int fractionalPartLength = 0;
     int coefficient = 0;
     int exponent = 0;
 
@@ -620,11 +622,11 @@ simple_expr:
         {
             genMepa("\tSOMA\n");
             if ( $1 != realType && $1 != integerType) {
-                error("Tipo invalido para op. de subtracao lado esquerdo "
+                typeError("Tipo invalido para op. de subtracao lado esquerdo "
                     + typeToString($1));
             }
             if ( $3 != realType && $3 != integerType) {
-                error("Tipo invalido para op. de subtracao lado direto "
+                typeError("Tipo invalido para op. de subtracao lado direto "
                     + typeToString($3));
             }
             if ($1 == realType || $3 == realType) {
@@ -637,11 +639,11 @@ simple_expr:
         {
             genMepa("\tSUBT\n");
             if ( $1 != realType && $1 != integerType) {
-                error("Tipo invalido para op. de subtracao lado esquerdo "
+                typeError("Tipo invalido para op. de subtracao lado esquerdo "
                     + typeToString($1));
             }
             if ( $3 != realType && $3 != integerType) {
-                error("Tipo invalido para op. de subtracao lado direto "
+                typeError("Tipo invalido para op. de subtracao lado direto "
                     + typeToString($3));
             }
             if ($1 == realType || $3 == realType) {
@@ -654,11 +656,11 @@ simple_expr:
         {
             genMepa("\tDISJ\n");
             if ( $1 != booleanType && $1 != integerType) {
-                error("Tipo invalido para op. logica \"or\" lado esquerdo "
+                typeError("Tipo invalido para op. logica \"or\" lado esquerdo "
                     + typeToString($1));
             }
             if ( $3 != booleanType && $3 != integerType) {
-                error("Tipo invalido para op. logica \"or\" lado direto "
+                typeError("Tipo invalido para op. logica \"or\" lado direto "
                     + typeToString($3));
             }
             $$ = booleanType;
@@ -671,11 +673,11 @@ term:
         {
             genMepa("\tMULT\n");
             if ( $1 != realType && $1 != integerType) {
-                error("Tipo invalido para multiplicacao lado esquerdo "
+                typeError("Tipo invalido para multiplicacao lado esquerdo "
                     + typeToString($1));
             }
             if ( $3 != realType && $3 != integerType) {
-                error("Tipo invalido para multiplicacao lado direto "
+                typeError("Tipo invalido para multiplicacao lado direto "
                     + typeToString($3));
             }
             if ($1 == realType || $3 == realType) {
@@ -688,11 +690,11 @@ term:
         {
             genMepa("\tDIVI\n");
             if ( $1 != realType && $1 != integerType) {
-                error("Tipo invalido para op. de divisao lado esquerdo "
+                typeError("Tipo invalido para op. de divisao lado esquerdo "
                     + typeToString($1));
             }
             if ( $3 != realType && $3 != integerType) {
-                error("Tipo invalido para op. de divisao lado direto "
+                typeError("Tipo invalido para op. de divisao lado direto "
                     + typeToString($3));
             }
             if ($1 == realType || $3 == realType) {
@@ -705,11 +707,11 @@ term:
         {
             genMepa("\tCONJ\n");
             if ( $1 != booleanType && $1 != integerType) {
-                error("Tipo invalido para op. logica \"and\" lado esquerdo "
+                typeError("Tipo invalido para op. logica \"and\" lado esquerdo "
                     + typeToString($1));
             }
             if ( $3 != booleanType && $3 != integerType) {
-                error("Tipo invalido para op. logica \"and\" lado direto "
+                typeError("Tipo invalido para op. logica \"and\" lado direto "
                     + typeToString($3));
             }
             $$ = booleanType;
@@ -721,7 +723,7 @@ factor_a:   factor { $$ = $1;}
                 {
                     genMepa("\tNEGA\n");
                     if ( $2 != booleanType && $2 != integerType) {
-                        error("Tipo invalido para op. logica "
+                        typeError("Tipo invalido para op. logica "
                             + typeToString($2));
                     }
                     $$ = booleanType;
@@ -729,7 +731,7 @@ factor_a:   factor { $$ = $1;}
             | PLUS factor
                 {
                     if ( $2 != realType && $2 != integerType) {
-                        error("Tipo invalido para op. unaria "
+                        typeError("Tipo invalido para op. unaria "
                             + typeToString($2));
                     }
                     $$ = $2;
@@ -738,7 +740,7 @@ factor_a:   factor { $$ = $1;}
                 {
                     genMepa("\tINVR\n");
                     if ( $2 != realType && $2 != integerType) {
-                        error("Tipo invalido para op. unaria "
+                        typeError("Tipo invalido para op. unaria "
                             + typeToString($2));
                     }
                     $$ = $2;
@@ -820,7 +822,7 @@ integer_constant: unsigned_integer ;
 unsigned_integer: UINT
                 {
                     const_value = strdup(yytext->string->c_str());
-                    const_number = strtol(const_value, NULL, 10);
+                    constNumber = strtol(const_value, NULL, 10);
                 } ;
 
 real_constant   : unsigned_real ;
@@ -828,14 +830,14 @@ real_constant   : unsigned_real ;
 unsigned_real   :   unsigned_integer
                     DOT
                     {
-                        integer_part = const_number;
+                        integerPart = constNumber;
                     }
                     unsigned_integer
                     {
-                        fractional_part = const_number;
-                        fractional_part_length = strlen(const_value);
-                        coefficient = integer_part
-                            + (fractional_part/(10^fractional_part_length));
+                        fractionalPart = constNumber;
+                        fractionalPartLength = strlen(const_value);
+                        coefficient = integerPart
+                            + (fractionalPart/(10^fractionalPartLength));
                         exponent = 0;
                     }
                     optional_scale_factor
@@ -846,7 +848,7 @@ unsigned_real   :   unsigned_integer
                     }
                 |   unsigned_integer
                     {
-                        coefficient = const_number;
+                        coefficient = constNumber;
                     }
                     scale_factor
                     {
@@ -864,8 +866,8 @@ optional_scale_factor: /* empty */
                                 coefficient*(10^exponent));
                         }
 
-scale_factor    : "E" PLUS unsigned_integer { exponent = const_number; }
-                | "E" MINUS unsigned_integer { exponent = -const_number; } ;
+scale_factor    : "E" PLUS unsigned_integer { exponent = constNumber; }
+                | "E" MINUS unsigned_integer { exponent = -constNumber; } ;
 
 char_constant   : STRING { const_value = strdup(yytext->string->c_str()); } ;
 
@@ -879,9 +881,14 @@ identifier:
 
 %%
 
+void typeError( const std::string &err_message )
+{
+    std::cerr << "erro de tipo: " << err_message << "\n";
+}
+
 void yy::LSMParser::error( const std::string &err_message )
 {
-    std::cerr << "Error: " << err_message << "\n";
+    std::cerr << "erro: " << err_message << "\n";
 }
 
 void yyerror(const char * format, ...) {
