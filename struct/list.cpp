@@ -9,12 +9,12 @@ Symbol *SymbolStack::topPop() {
     return node;
 }
 
-Symbol* SymbolStack::find(const char* text){
+Symbol* SymbolStack::find(const std::string text){
     //std::list<t_object*>::iterator findIter = std::find(symbolList.begin(), symbolList.end(), 1);
 
     Symbol* aux = NULL;
     for (std::list<Symbol*>::iterator it = symbolList.begin(); it != symbolList.end(); it++) {
-        if(strcmp((*it)->id, text) == 0)
+        if((*it)->id == text)
             if((aux == NULL) || ((*it)->nl > aux->nl))
                 aux = *it;
     }

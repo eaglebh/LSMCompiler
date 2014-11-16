@@ -9,7 +9,7 @@
 
 class SymbolStack {
     public:
-        Symbol* find(const char* text);
+        Symbol* find(const std::string text);
         Symbol* topPop();
         SymbolStack(){};
         void push(Symbol* obj) {

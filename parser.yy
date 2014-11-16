@@ -113,7 +113,7 @@ program         :
     }
     identifier
     {
-        symbol1 = object_create(strdup(yytext->string->c_str()), nl, offset); aux->push(symbol1);
+        symbol1 = object_create(*yytext->string, nl, offset); aux->push(symbol1);
     }
     proc_body
     {
@@ -210,10 +210,10 @@ ident_list:
         if (is_label) {
             symbol1 = object_create_label(label);
             label++;
-            strcpy(symbol1->id, strdup(yytext->string->c_str()));
+            symbol1->id = *yytext->string;
             ts->push(symbol1);
         } else {
-            symbol1 = object_create(strdup(yytext->string->c_str()), nl, offset);
+            symbol1 = object_create(*yytext->string, nl, offset);
             offset++;
             aux->push(symbol1);
         }
@@ -227,10 +227,10 @@ ident_list:
             if (is_label) {
                 symbol1 = object_create_label(label);
                 label++;
-                strcpy(symbol1->id, strdup(yytext->string->c_str()));
+                symbol1->id = *yytext->string;
                 ts->push(symbol1);
             } else {
-                symbol1 = object_create(strdup(yytext->string->c_str()), nl, offset);
+                symbol1 = object_create(*yytext->string, nl, offset);
                 offset++;
                 aux->push(symbol1);
             }
@@ -269,7 +269,7 @@ proc_header     :
         if (symbol1 && symbol1->nl == nl)
              yyerror("Procedimento já declarado.");
 
-        symb_proc = object_create_procedure(strdup(yytext->string->c_str()));
+        symb_proc = object_create_procedure(*yytext->string);
         symb_proc->nl = nl;
         symb_proc->label = label - 1;
     }
@@ -319,7 +319,7 @@ formal_list     :
 parameter_decl:
     parameter_type identifier
     {
-        symbol1 = object_create(strdup(yytext->string->c_str()), nl, offset);
+        symbol1 = object_create(*yytext->string, nl, offset);
         offset++;
         aux->push(symbol1);
 
@@ -360,7 +360,7 @@ unlabelled_stmt : assign_stmt
                     | if_stmt
                     |
                     {
-                        symbol1 = object_create(strdup(""), 0, 0);
+                        symbol1 = object_create(std::string(""), 0, 0);
                         symbol1->label = write_label();
                         gen_code(":\tNADA\n");
                         labels->push(symbol1);
@@ -385,9 +385,9 @@ assign_stmt     :
                         yyerror("variable nao declarada.");
 
                     if (symb_atr->cat == C_PARAMETER && symb_atr->passage == P_ADDRESS) {
-                        gen_code("\tARMI %d, %d # %s\n", symb_atr->nl, symb_atr->offset, symb_atr->id);
+                        gen_code("\tARMI %d, %d # %s\n", symb_atr->nl, symb_atr->offset, symb_atr->id.c_str());
                     } else
-                        gen_code("\tARMZ %d, %d # %s\n", symb_atr->nl, symb_atr->offset, symb_atr->id);
+                        gen_code("\tARMZ %d, %d # %s\n", symb_atr->nl, symb_atr->offset, symb_atr->id.c_str());
                 }
 ;
 
@@ -408,9 +408,9 @@ variable_list   :
             if (!symbol1)
                 yyerror("variable nao declarada.");
             if (symbol1->cat == C_PARAMETER && symbol1->passage == P_ADDRESS) {
-                gen_code("\tARMI %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                gen_code("\tARMI %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id.c_str());
             } else
-                gen_code("\tARMZ %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                gen_code("\tARMZ %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id.c_str());
         }
     }
     | variable_list COMMA
@@ -425,9 +425,9 @@ variable_list   :
             if (!symbol1)
                 yyerror("variable nao declarada.");
             if (symbol1->cat == C_PARAMETER && symbol1->passage == P_ADDRESS) {
-                gen_code("\tARMI %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                gen_code("\tARMI %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id.c_str());
             } else
-                gen_code("\tARMZ %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                gen_code("\tARMZ %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id.c_str());
         }
     }
 ;
@@ -438,7 +438,7 @@ if_stmt:
     IF condition
     THEN stmt_list
     {
-        symbol1 = object_create(strdup(""), 0, 0);
+        symbol1 = object_create(std::string(""), 0, 0);
         gen_code("\tDSVS ");
         symbol1->label = write_label();
         gen_code("\n");
@@ -456,7 +456,7 @@ if_stmt:
     IF condition
     THEN stmt_list
     {
-        symbol1 = object_create(strdup(""), 0, 0);
+        symbol1 = object_create(std::string(""), 0, 0);
         gen_code("\tDSVS ");
         symbol1->label = write_label();
         gen_code("\n");
@@ -475,7 +475,7 @@ if_stmt:
 condition:
     expression
     {
-        symbol1 = object_create(strdup(""), 0, 0);
+        symbol1 = object_create(std::string(""), 0, 0);
         gen_code("\tDSVF ");
         symbol1->label = write_label();
         gen_code("\n");
@@ -619,31 +619,31 @@ factor:
             yyerror("variável não declarada %s.", yytext->string->c_str());
 
         if (symb_proc && nparam >= symb_proc->nParameter)
-            yyerror("procedimento %s chamado com número inválido de parâmetros %d de %d.", symb_proc->id, nparam, symb_proc->nParameter);
+            yyerror("procedimento %s chamado com número inválido de parâmetros %d de %d.", symb_proc->id.c_str(), nparam, symb_proc->nParameter);
 
         if (symb_proc && symb_proc->parameters[nparam] == P_ADDRESS) {
             if (symbol1->cat == C_VARIABLE) {
-                gen_code("\tCREN %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                gen_code("\tCREN %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id.c_str());
             }else if (symbol1->cat == C_PARAMETER) {
                 if (symbol1->passage == P_VALUE) {
-                    gen_code("\tCREN %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                    gen_code("\tCREN %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id.c_str());
                 } else {
                     if (symbol1->passage == P_ADDRESS) {
-                        gen_code("\tCRVL %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                        gen_code("\tCRVL %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id.c_str());
                     }
                 }
             }
             nparam++;
         } else {
             if (symbol1->cat == C_VARIABLE){
-                gen_code("\tCRVL %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                gen_code("\tCRVL %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id.c_str());
             } else {
                 if (symbol1->cat == C_PARAMETER) {
                     if (symbol1->passage == P_VALUE){
-                        gen_code("\tCRVL %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                        gen_code("\tCRVL %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id.c_str());
                     } else {
                         if (symbol1->passage == P_ADDRESS) {
-                            gen_code("\tCRVI %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id);
+                            gen_code("\tCRVI %d, %d # %s\n", symbol1->nl, symbol1->offset, symbol1->id.c_str());
                         }
                     }
                 }
@@ -690,6 +690,7 @@ unsigned_real   :   unsigned_integer
                     }
                     optional_scale_factor
                     {
+                        const_value = (char*)malloc(MAXNUMSTR*sizeof(char));
                         snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent));
                     }
                 |   unsigned_integer
@@ -698,6 +699,7 @@ unsigned_real   :   unsigned_integer
                     }
                     scale_factor
                     {
+                        const_value = (char*)malloc(MAXNUMSTR*sizeof(char));
                         snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent));
                     }
 ;
@@ -705,6 +707,7 @@ unsigned_real   :   unsigned_integer
 optional_scale_factor:
                         |   scale_factor
                             {
+                                const_value = (char*)malloc(MAXNUMSTR*sizeof(char));
                                 snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent));
                             }
 
@@ -716,8 +719,8 @@ char_constant   : STRING { const_value = strdup(yytext->string->c_str()); } ;
 identifier:
     ID
     {
-        symbol1 = ts->find(yytext->string->c_str());
-        symbol2 = aux->find(yytext->string->c_str());
+        symbol1 = ts->find(*yytext->string);
+        symbol2 = aux->find(*yytext->string);
     }
 ;
 

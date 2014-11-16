@@ -1,26 +1,26 @@
 #include "object.h"
 
-Symbol *object_create(char *id, int nl, int offset) {
+Symbol *object_create(std::string id, int nl, int offset) {
     Symbol *o = new Symbol;
     if(!o) return NULL;
-    strcpy(o->id, id);
+    o->id = id;
     o->nl = nl;
     o->offset = offset;
     return o;
 }
 
-Symbol *object_create_procedure(char *id) {
+Symbol *object_create_procedure(std::string id) {
     Symbol *o = new Symbol;
     if(!o) return NULL;
-    strcpy(o->id, id);
+    o->id = id;
     o->cat = C_PROCEDURE;
     return o;
 }
 
-Symbol *object_create_function(char *id) {
+Symbol *object_create_function(std::string id) {
     Symbol *o = new Symbol;
     if(!o) return NULL;
-    strcpy(o->id, id);
+    o->id = id;
     o->cat = C_FUNCTION;
     return o;
 }
@@ -39,7 +39,7 @@ Symbol *object_cpy(Symbol *object1, Symbol *object2) {
     if(!object1 || !object2)
         return NULL;
 
-    strcpy(object1->id, strdup(object2->id));
+    object1->id = object2->id;
     object1->nl = object2->nl;
     object1->offset = object2->offset;
     object1->cat = object2->cat;
@@ -51,34 +51,4 @@ Symbol *object_cpy(Symbol *object1, Symbol *object2) {
     return object1;
 }
 
-void object_write(void *p) {
-    Symbol *object =(Symbol *) p;
-    printf("\n");
-    printf("id: %s " , object->id);
-    printf("cat: %d ", object->cat);
-    printf("NL: %d ", object->nl);
-    printf("offset: %d ", object->offset);
-    printf("passage: %d ", object->passage);
-    printf("#parameter: %d ", object->nParameter);
-    int i;
-    for(i = 0; i < object->nParameter; i++) {
-        printf("p[%d]: %d ", i, object->parameters[i]);
-    }
-}
-
-void object_destroy(Symbol *object) {
-    free(object);
-}
-
-int object_cmp_id(Symbol *object1, Symbol *object2) {
-    return strcmp(object1->id, object2->id);
-}
-
-int object_cmp_nl(Symbol *object1, Symbol *object2) {
-    return(object1->nl == object2->nl);
-}
-
-int object_cmp(Symbol *object1, Symbol *object2) {
-    return(object_cmp_id(object1, object2));
-}
 
