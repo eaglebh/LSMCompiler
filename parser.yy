@@ -4,6 +4,8 @@
 
 %code requires{
     class LSMScanner;
+
+    #include "struct/object.h"
 }
 
 %error-verbose
@@ -43,6 +45,7 @@
     int write = 0;  // indica uso de write
     int read = 0;  // indica uso de read
     int is_label = 0;
+    t_types current_type = voidType;
 
     char *const_value = NULL;
     int const_number = 0;
@@ -81,6 +84,7 @@
 %union {
     int token;
     std::string *string;
+    t_types type;
 }
 
 %start program
@@ -88,14 +92,16 @@
 %token UNKNOWN
 %token <uint_type>  UINT
 %token <string>     ID
-%token <token>     IF WHILE DO LABEL
-%token <token>     DECLARE END INTEGER REAL BOOLEAN CHAR ARRAY OF PROCEDURE THEN ELSE UNTIL FALSE TRUE
+%token <token>      IF WHILE DO LABEL
+%token <token>      DECLARE END INTEGER REAL BOOLEAN CHAR ARRAY OF PROCEDURE THEN ELSE UNTIL FALSE TRUE
 %token <token>      READ WRITE GOTO RETURN
 %token <token>      NOT OR AND
 %token <token>      ASSIGNOP
 %token <token>      EQL NEQ LSS GTR LEQ GEQ PLUS MINUS TIMES DIV
 %token <token>      COMMA SEMICOLON DOT LPAREN RPAREN LBRACKET RBRACKET COLON EXP
 %token <string>     STRING
+
+%type <type> condition expression simple_expr term factor_a factor variable constant
 
 /* precedencia de operadores */
 %left PLUS MINUS
@@ -195,6 +201,7 @@ variable_decl:
         nvars = aux->size();
         while ( (symbol1 = aux->topPop()) ) {
             symbol1->cat = C_VARIABLE;
+            symbol1->type = current_type;
             ts->push(symbol1);
         }
     }
@@ -237,15 +244,15 @@ ident_list:
         }
 ;
 
-type            : { is_label = 0; } simple_type
-                | { is_label = 0; } array_type
+type            : { is_label = 0; current_type = voidType; } simple_type
+                | { is_label = 0; current_type = voidType; } array_type
 ;
 
-simple_type     : INTEGER
-                | REAL
-                | BOOLEAN
-                | CHAR
-                | { is_label = 1; } LABEL
+simple_type     : INTEGER { current_type = integerType; }
+                | REAL { current_type = realType; }
+                | BOOLEAN { current_type = booleanType; }
+                | CHAR { current_type = charType; }
+                | { is_label = 1; } LABEL { current_type = labelType; }
 ;
 
 array_type      : ARRAY tamanho OF simple_type;
@@ -324,13 +331,14 @@ parameter_decl:
         aux->push(symbol1);
 
         symbol1->cat = C_PARAMETER;
+        symbol1->type = current_type;
         symbol1->passage = P_ADDRESS;
         parameters->push(symbol1);
     }
 ;
 
 parameter_type  : type
-                | proc_signature ;
+                | proc_signature { current_type = voidType; };
 
 proc_signature  : PROCEDURE identifier LPAREN type_list RPAREN
                 | PROCEDURE identifier ;
@@ -382,18 +390,20 @@ assign_stmt     :
                 ASSIGNOP expression
                 {
                     if (!symb_atr)
-                        yyerror("variable nao declarada.");
+                        yyerror("variavel nao declarada.");
 
-                    if (symb_atr->cat == C_PARAMETER && symb_atr->passage == P_ADDRESS) {
+                    if (symb_atr->cat == C_PARAMETER) {
                         gen_code("\tARMI %d, %d # %s\n", symb_atr->nl, symb_atr->offset, symb_atr->id.c_str());
-                    } else
+                    } else {
                         gen_code("\tARMZ %d, %d # %s\n", symb_atr->nl, symb_atr->offset, symb_atr->id.c_str());
+                    }
+                    //std::cerr << "var = " << $1 << " expr = " << $3 << " st = " << symb_atr->type << std::endl;
                 }
 ;
 
 variable:
-    identifier
-    | array_element
+    identifier { $$ = symbol1->type; }
+    | array_element { $$ = symbol1->type; }
 ;
 
 variable_list   :
@@ -480,6 +490,7 @@ condition:
         symbol1->label = write_label();
         gen_code("\n");
         labels->push(symbol1);
+        $$ = $1;
     }
 ;
 
@@ -581,34 +592,129 @@ expr_list:
 
 
 expression:
-    simple_expr
-    | simple_expr EQL simple_expr { gen_code("\tCMIG\n"); }
-    | simple_expr NEQ simple_expr { gen_code("\tCMDG\n"); }
-    | simple_expr LSS simple_expr { gen_code("\tCMME\n"); }
-    | simple_expr GTR simple_expr { gen_code("\tCMMA\n"); }
-    | simple_expr LEQ simple_expr { gen_code("\tCMEG\n"); }
-    | simple_expr GEQ simple_expr { gen_code("\tCMAG\n"); }
+    simple_expr {  $$ = $1; }
+    | simple_expr EQL simple_expr { gen_code("\tCMIG\n"); $$ = booleanType; }
+    | simple_expr NEQ simple_expr { gen_code("\tCMDG\n"); $$ = booleanType; }
+    | simple_expr LSS simple_expr { gen_code("\tCMME\n"); $$ = booleanType; }
+    | simple_expr GTR simple_expr { gen_code("\tCMMA\n"); $$ = booleanType; }
+    | simple_expr LEQ simple_expr { gen_code("\tCMEG\n"); $$ = booleanType; }
+    | simple_expr GEQ simple_expr { gen_code("\tCMAG\n"); $$ = booleanType; }
 ;
 
 simple_expr:
-    term
-    | simple_expr PLUS  term { gen_code("\tSOMA\n"); }
-    | simple_expr MINUS term { gen_code("\tSUBT\n"); }
-    | simple_expr OR    term { gen_code("\tDISJ\n"); }
+    term { $$ = $1; }
+    | simple_expr PLUS  term
+        {
+            gen_code("\tSOMA\n");
+            if ( $1 != realType && $1 != integerType) {
+                error("Tipo inválido para operação de subtração lado esquerdo " + t_type2str($1));
+            }
+            if ( $3 != realType && $3 != integerType) {
+                error("Tipo inválido para operação de subtração lado direto " + t_type2str($3));
+            }
+            if ($1 == realType || $3 == realType) {
+                $$ = realType;
+            } else {
+                $$ = integerType;
+            }
+        }
+    | simple_expr MINUS term
+        {
+            gen_code("\tSUBT\n");
+            if ( $1 != realType && $1 != integerType) {
+                error("Tipo inválido para operação de subtração lado esquerdo " + t_type2str($1));
+            }
+            if ( $3 != realType && $3 != integerType) {
+                error("Tipo inválido para operação de subtração lado direto " + t_type2str($3));
+            }
+            if ($1 == realType || $3 == realType) {
+                $$ = realType;
+            } else {
+                $$ = integerType;
+            }
+        }
+    | simple_expr OR    term
+        {
+            gen_code("\tDISJ\n");
+            if ( $1 != booleanType && $1 != integerType) {
+                error("Tipo inválido para operação booleana \"or\" lado esquerdo " + t_type2str($1));
+            }
+            if ( $3 != booleanType && $3 != integerType) {
+                error("Tipo inválido para operação booleana \"or\" lado direto " + t_type2str($3));
+            }
+            $$ = booleanType;
+        }
 ;
 
 term:
-    factor_a
-    | term TIMES factor_a { gen_code("\tMULT\n"); }
-    | term DIV   factor_a { gen_code("\tDIVI\n"); }
-    | term AND   factor_a { gen_code("\tCONJ\n"); }
+    factor_a { $$ = $1; }
+    | term TIMES factor_a
+        {
+            gen_code("\tMULT\n");
+            if ( $1 != realType && $1 != integerType) {
+                error("Tipo inválido para operação de multiplicação lado esquerdo " + t_type2str($1));
+            }
+            if ( $3 != realType && $3 != integerType) {
+                error("Tipo inválido para operação de multiplicação lado direto " + t_type2str($3));
+            }
+            if ($1 == realType || $3 == realType) {
+                $$ = realType;
+            } else {
+                $$ = integerType;
+            }
+        }
+    | term DIV   factor_a
+        {
+            gen_code("\tDIVI\n");
+            if ( $1 != realType && $1 != integerType) {
+                error("Tipo inválido para operação de divisão lado esquerdo " + t_type2str($1));
+            }
+            if ( $3 != realType && $3 != integerType) {
+                error("Tipo inválido para operação de divisão lado direto " + t_type2str($3));
+            }
+            if ($1 == realType || $3 == realType) {
+                $$ = realType;
+            } else {
+                $$ = integerType;
+            }
+        }
+    | term AND   factor_a
+        {
+            gen_code("\tCONJ\n");
+            if ( $1 != booleanType && $1 != integerType) {
+                error("Tipo inválido para operação booleana \"and\" lado esquerdo " + t_type2str($1));
+            }
+            if ( $3 != booleanType && $3 != integerType) {
+                error("Tipo inválido para operação booleana \"and\" lado direto " + t_type2str($3));
+            }
+            $$ = booleanType;
+        }
 ;
 
-factor_a:   factor
-            | NOT factor { gen_code("\tNEGA\n"); }
+factor_a:   factor { $$ = $1;}
+            | NOT factor
+                {
+                    gen_code("\tNEGA\n");
+                    if ( $2 != booleanType && $2 != integerType) {
+                        error("Tipo inválido para operação booleana " + t_type2str($2));
+                    }
+                    $$ = booleanType;
+                }
             | PLUS factor
-            | MINUS factor { gen_code("\tINVR\n"); }
-
+                {
+                    if ( $2 != realType && $2 != integerType) {
+                        error("Tipo inválido para operação unária " + t_type2str($2));
+                    }
+                    $$ = $2;
+                }
+            | MINUS factor
+                {
+                    gen_code("\tINVR\n");
+                    if ( $2 != realType && $2 != integerType) {
+                        error("Tipo inválido para operação unária " + t_type2str($2));
+                    }
+                    $$ = $2;
+                }
 ;
 
 factor:
@@ -649,6 +755,7 @@ factor:
                 }
             }
         }
+        $$ = symbol1->type;
     }
     | constant
     {
@@ -658,23 +765,24 @@ factor:
             yyerror("procedimento chamado com número inválido de parâmetros.");
 
         gen_code("\tCRCT %s\n", const_value);
+        $$ = $1;
     }
-    | LPAREN expression RPAREN
+    | LPAREN expression RPAREN {  $$ = $2; }
 ;
 
-constant        : integer_constant
-                | real_constant
-                | char_constant
-                | boolean_constant ;
+constant        : integer_constant { $$ = integerType; }
+                | real_constant { $$ = realType; }
+                | char_constant { $$ = charType; };
+                | boolean_constant { $$ = integerType; };
 
 boolean_constant: FALSE { const_value = strdup("0"); }
                 | TRUE { const_value = strdup("1"); } ;
 
 integer_constant: unsigned_integer ;
 
-unsigned_integer: UINT { const_value = strdup(yytext->string->c_str()); const_number = strtol(const_value, NULL, 10); } ;
+unsigned_integer: UINT { const_value = strdup(yytext->string->c_str()); const_number = strtol(const_value, NULL, 10);} ;
 
-real_constant   : unsigned_real;
+real_constant   : unsigned_real ;
 
 unsigned_real   :   unsigned_integer
                     DOT

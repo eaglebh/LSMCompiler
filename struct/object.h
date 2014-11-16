@@ -1,5 +1,5 @@
-#ifndef _object_
-#define _object_
+#ifndef _objectH_
+#define _objectH_
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -15,6 +15,16 @@
 #define P_VALUE 0
 #define P_ADDRESS 1
 
+enum t_types {
+    voidType = 0,
+    integerType = 1,
+    realType,
+    booleanType,
+    charType,
+    labelType,
+    stringType
+};
+
 class Symbol {
 public:
     std::string id;
@@ -22,6 +32,7 @@ public:
     int offset;
     int label;
     int cat;
+    t_types type;
     int passage;
     int nParameter;
     int *parameters;
@@ -32,6 +43,7 @@ public:
         offset = 0;
         label = 0;
         cat = 0;
+        type = voidType;
         passage = 0;
         nParameter = 0;
         parameters = NULL;
@@ -43,6 +55,8 @@ Symbol* object_create_procedure(std::string id);
 Symbol* object_create_function(std::string id);
 Symbol* object_create_label(int label);
 Symbol* object_cpy(Symbol *object1, Symbol *object2);
+
+std::string t_type2str(t_types type);
 
 #endif
 

@@ -14,14 +14,7 @@ Symbol *object_create_procedure(std::string id) {
     if(!o) return NULL;
     o->id = id;
     o->cat = C_PROCEDURE;
-    return o;
-}
-
-Symbol *object_create_function(std::string id) {
-    Symbol *o = new Symbol;
-    if(!o) return NULL;
-    o->id = id;
-    o->cat = C_FUNCTION;
+    o->type = voidType;
     return o;
 }
 
@@ -30,6 +23,7 @@ Symbol *object_create_label(int label) {
     if(!o) return NULL;
     o->label = label;
     o->cat = C_LABEL;
+    o->type = labelType;
     return o;
 }
 
@@ -43,6 +37,7 @@ Symbol *object_cpy(Symbol *object1, Symbol *object2) {
     object1->nl = object2->nl;
     object1->offset = object2->offset;
     object1->cat = object2->cat;
+    object1->type = object2->type;
     object1->passage = object2->passage;
     object1->nParameter = object2->nParameter;
     object1->parameters = object2->parameters;
@@ -51,4 +46,23 @@ Symbol *object_cpy(Symbol *object1, Symbol *object2) {
     return object1;
 }
 
+std::string t_type2str(t_types type) {
+    switch (type) {
+    case integerType:
+        return "integer";
+    case realType:
+        return "real";
+    case booleanType:
+        return "boolean";
+    case charType:
+        return "char";
+    case labelType:
+        return "label";
+    case stringType:
+        return "string";
+    case voidType:
+    default:
+        return "void";
+    }
+}
 
