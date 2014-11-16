@@ -31,23 +31,53 @@
 \medskip
 \centerline{\large Aluno: Pablo Marcondes Fonseca \texttt{pablom@dcc.ufmg.br}}
 \bigskip
-\centerline{\Large \textbf{Analisador Sintático}}
-
-\section{Descrição}
-
-O analisador sintático foi implementado na linguagem C++, utilizando a ferramenta bison. O bison foi utilizado para gerar o parser a partir de uma notação própria, onde inserimos a gramática da linguagem e o mesmo gera um parser utilizando tabelas LALR.
-
-A maior dificuldade encontrada foi com relação ao uso da ferramenta, principalmente na escrita da gramática em outra notação. A partir da leitura de trechos do manual oficial, alguns códigos de exemplo, e vários testes, foi possível entender o funcionamento do sistema de geração de parser e criar o arquivo adequado para concluir o trabalho.
+\centerline{\Large \textbf{Trabalho Prático Completo}}
 
 
-\section{Implementação e Resultados}
+\section{Introdução}
 
-Foi criado um programa principal para executar continuamente o analisador sintático sobre o arquivo de entrada, esse programa tem seu código na listagem \ref{lst:main}
+O trabalho foi realizado utilizando-se a linguagem C++ em boa parte do código, as ferramentas flex e bison foram essenciais para a criação do compilador. A linguagem intermediária escolhida foi a MEPA, por sua simplicidade e suporte ao que era necessário para implementação de um compilador para a linguagem LSM.
 
-\lstinputlisting[basicstyle=\footnotesize,language=C++,caption={Programa principal},label={lst:main}]{main.cpp}
+Foram entregues relatórios parciais para a Tabela de Símbolos, Analisador Léxico e Analisador Sintático. Houve alterações no código desses elementos do compilador, neste relatório são explicitadas as diferenças principais dessas três partes, e o código completo é listado ao final. Não há neste relatório a repetição dos resultados do que já foi entregue, pois a execução final já compreende todas essas etapas. 
 
-\medskip
-O analisador sintático utilizando a ferramenta Bison para gerar código, é criado a partir da especificação em uma linguagem própria do Bison (sucessor do Yacc), é uma notação muito próxima de C. No arquivo parser.yy, que pode ser visto na listagem \ref{lst:parser}, definiu-se um conjunto de \textit{tokens} que são retornados pelo analisador léxico ao encontrar-se cada uma das partes definidas na gramática utilizada. O parser verifica se as construções estão de acordo com a gramática, e retorna erro caso encontra alguma expressão que não possa ser derivada dela a partir do símbolo inicial.
+Há detalhes maiores para as etapas seguintes, como a execução final já compreende todas as partes do compilador, toda a listagem é feita no final do relatório.
+
+\section{Tabela de Símbolos}
+
+A tabela de simbolos implementada anteriormente utilizava basicamente código em C, na implementação melhorada utilizou-se a linguagem C++ para facilitar alguns aspectos da implementação, como manipulação da pilha e de lista auxiliar. Tanto a pilha quanto a lista utilizam apontadores para reduzir o uso de memória RAM, compartilhando entre si os símbolos apontados.
+
+A implementação atual chama-se SymbolStack, e possui todos os métodos básicos que permitem Instalar, informar Entrada de Bloco, Saída de Bloco, Recuperar símbolo, entre outras operações. Utilizou-se as estruturas de dados stack e list da STL do C++ para implementação da tabela de símbolos. Parte do código pode ser visualizado nas listagens \ref{lst:sth} e \ref{lst:stcpp}
+
+\lstinputlisting[basicstyle=\footnotesize,language=C++,caption={Tabela de símbolos - cabeçalho},label={lst:sth}]{SymbolStack.h}
+
+\lstinputlisting[basicstyle=\footnotesize,language=C++,caption={Tabela de símbolos - corpo},label={lst:stcpp}]{SymbolStack.cpp}
+
+
+\section{Analisador Léxico}
+
+O analisador léxico sofreu poucas modificações, apenas refatoração de algumas partes e desabilitou-se o método que imprimia a saída a cada leitura realizada, então o resultado final é praticamente o mesmo do inicial.
+
+O código final pode ser visto na listagem \ref{lst:lex}, com poucas diferenças da primeira versão já entregue.
+
+\lstinputlisting[basicstyle=\footnotesize,language=C++,caption={Programa Lex},label={lst:lex}]{scanner.ll}
+
+
+\section{Analisador Sintático}
+
+Quanto à análise sintática não houve muitas modificações, apenas o necessário para resolver alguns conflitos criados com a geração de código. Para encontrar os problemas habilitou-se a saída de debug do bison, dessa forma foi possível identificar os estados com conflitos de shift-reduce e reduce-reduce criados, o que permitiu a modificação do compilador a fim de resolver esses problemas.
+
+Como o código final contém a parte de análise sintática, verificação de tipos e também geração de código, há uma listagem apenas compreendendo todas as partes implementadas no arquivo de entrada da ferramenta bison, o parser.yy que pode ser visualizado na seção \ref{listagem}.
+
+\section{Análise Semântica}
+
+A análise semântica compreendendo tradução e verificação de tipos foi realizada sobre o arquivo de entrada para o bison, o parser.yy. Criou-se um conjunto de métodos auxiliares para geração e verificação de tipos, além de algumas variáveis de controle.
+
+\section{Código Intermediário}
+
+\section{Execução}
+
+
+\section{Listagem Final de Códigos} \label{listagem}
 
 \lstinputlisting[basicstyle=\footnotesize,language=C++,caption={Programa Yacc},label={lst:parser}]{parser.yy}
 
