@@ -1,10 +1,10 @@
 #include "object.h"
 
-Symbol *object_create(std::string id, int nl, int offset) {
+Symbol *object_create(std::string id, int level, int offset) {
     Symbol *o = new Symbol;
     if(!o) return NULL;
     o->id = id;
-    o->nl = nl;
+    o->level = level;
     o->offset = offset;
     return o;
 }
@@ -34,7 +34,7 @@ Symbol *object_cpy(Symbol *object1, Symbol *object2) {
         return NULL;
 
     object1->id = object2->id;
-    object1->nl = object2->nl;
+    object1->level = object2->level;
     object1->offset = object2->offset;
     object1->cat = object2->cat;
     object1->type = object2->type;

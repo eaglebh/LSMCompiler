@@ -15,7 +15,7 @@ Symbol* SymbolStack::find(const std::string text){
     Symbol* aux = NULL;
     for (std::list<Symbol*>::iterator it = symbolList.begin(); it != symbolList.end(); it++) {
         if((*it)->id == text)
-            if((aux == NULL) || ((*it)->nl > aux->nl))
+            if((aux == NULL) || ((*it)->level > aux->level))
                 aux = *it;
     }
     return aux;

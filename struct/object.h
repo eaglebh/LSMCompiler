@@ -28,7 +28,7 @@ enum t_types {
 class Symbol {
 public:
     std::string id;
-    int nl;
+    int level;
     int offset;
     int label;
     int cat;
@@ -39,7 +39,7 @@ public:
 
     Symbol() {
         id = std::string("");
-        nl = 0;
+        level = 0;
         offset = 0;
         label = 0;
         cat = 0;
@@ -50,7 +50,7 @@ public:
     }
 };
 
-Symbol* object_create(std::string id, int nl, int offset);
+Symbol* object_create(std::string id, int level, int offset);
 Symbol* object_create_procedure(std::string id);
 Symbol* object_create_function(std::string id);
 Symbol* object_create_label(int label);
