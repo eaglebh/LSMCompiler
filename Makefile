@@ -1,8 +1,8 @@
 CPP_FLAGS=-g -std=c++11
 
-all: test
+all: compiler
 
-debug: test
+debug: compiler
 
 scanner.cpp: scanner.ll parser.cpp
 	flex -d -oscanner.cpp scanner.ll
@@ -16,14 +16,20 @@ scanner.o: scanner.cpp parser.cpp
 parser.o: parser.cpp scanner.o
 	g++ ${CPP_FLAGS} -c parser.cpp
 
+Symbol.o: Symbol.cpp
+	g++ ${CPP_FLAGS} -c Symbol.cpp
+
+SymbolStack.o: SymbolStack.cpp
+	g++ ${CPP_FLAGS} -c SymbolStack.cpp
+
 main.o: main.cpp
 	g++ ${CPP_FLAGS} -c main.cpp
 
-test: scanner.o parser.o main.o
-	g++ ${CPP_FLAGS} -o test main.o parser.o scanner.o struct/list.cpp struct/object.cpp
+compiler: Symbol.o SymbolStack.o scanner.o parser.o main.o
+	g++ ${CPP_FLAGS} -o compiler main.o parser.o scanner.o SymbolStack.o Symbol.o
 
 clean:
-	rm -rf *.o test scanner.cpp parser.cpp parser.h stack.hh parser.output
+	rm -rf *.o compiler scanner.cpp parser.cpp parser.h stack.hh parser.output
 
 cleandebug: clean
 

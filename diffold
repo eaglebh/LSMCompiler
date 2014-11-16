@@ -3,7 +3,7 @@
 for f in `ls t/*lsm`; 
 do 
     diferente=0;
-    ./test < $f > /tmp/${f}.out 2> /tmp/${f}.err; 
+    ./compiler < $f > /tmp/${f}.out 2> /tmp/${f}.err; 
     r1="$(diff ${f}.out /tmp/${f}.out)"
     if [ ! -z "$r1" ] 
     then

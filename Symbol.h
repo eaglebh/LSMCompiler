@@ -1,7 +1,5 @@
-#ifndef _objectH_
-#define _objectH_
-#include <cstdio>
-#include <cstdlib>
+#ifndef _SymbolH_
+#define _SymbolH_
 #include <string>
 
 #define MAX_PARAMETERS 64
@@ -9,13 +7,12 @@
 #define C_VARIABLE 0
 #define C_PARAMETER 1
 #define C_PROCEDURE 2
-#define C_FUNCTION 3
-#define C_LABEL 4
+#define C_LABEL 3
 
 #define P_VALUE 0
 #define P_ADDRESS 1
 
-enum t_types {
+enum TypeEnum {
     voidType = 0,
     integerType = 1,
     realType,
@@ -31,8 +28,8 @@ public:
     int level;
     int offset;
     int label;
-    int cat;
-    t_types type;
+    int category;
+    TypeEnum type;
     int passage;
     int nParameter;
     int *parameters;
@@ -42,21 +39,19 @@ public:
         level = 0;
         offset = 0;
         label = 0;
-        cat = 0;
+        category = 0;
         type = voidType;
-        passage = 0;
+        passage = P_ADDRESS;
         nParameter = 0;
         parameters = NULL;
     }
 };
 
-Symbol* object_create(std::string id, int level, int offset);
-Symbol* object_create_procedure(std::string id);
-Symbol* object_create_function(std::string id);
-Symbol* object_create_label(int label);
-Symbol* object_cpy(Symbol *object1, Symbol *object2);
+Symbol* buildSymbol(std::string id, int level, int offset);
+Symbol* buildProcedure(std::string id);
+Symbol* buildLabel(int label);
+Symbol* copySymbol(Symbol *object1, Symbol *object2);
 
-std::string t_type2str(t_types type);
+std::string typeToString(TypeEnum type);
 
 #endif
-

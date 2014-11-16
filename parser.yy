@@ -3,9 +3,8 @@
 %define parser_class_name {LSMParser}
 
 %code requires{
+    #include "Symbol.h"
     class LSMScanner;
-
-    #include "struct/object.h"
 }
 
 %error-verbose
@@ -15,8 +14,9 @@
     #include <cstdio>
     #include <cstdlib>
     #include <cstdarg>
-    #include "struct/object.h"
-    #include "struct/list.h"
+    #include <cstring>
+    #include "Symbol.h"
+    #include "SymbolStack.h"
 
     #include "scanner.h"
 
@@ -45,7 +45,7 @@
     int parsingWrite = 0;  // indica uso de write
     int parsingRead = 0;   // indica uso de read
     int isLabel = 0;
-    t_types current_type = voidType;
+    TypeEnum current_type = voidType;
 
     char *const_value = NULL;
     int const_number = 0;
@@ -59,9 +59,9 @@
 
     int deb_line = 0;
 
-    #define gen_code(...) { deb_line = __LINE__; pgen_code(__VA_ARGS__); }
+    #define genMepa(...) { deb_line = __LINE__; pgenMepa(__VA_ARGS__); }
 
-    void pgen_code(const char * format, ...) {
+    void pgenMepa(const char * format, ...) {
         char buffer[256];
         va_list args;
         va_start (args, format);
@@ -74,7 +74,7 @@
 
     int write_label(void) {
         int l = label;
-        gen_code("R%03d", label);
+        genMepa("R%03d", label);
         label++;
         return l;
     }
@@ -84,24 +84,26 @@
 %union {
     int token;
     std::string *string;
-    t_types type;
+    TypeEnum type;
 }
 
 %start program
 %token PROGRAM
 %token UNKNOWN
-%token <uint_type>  UINT
-%token <string>     ID
-%token <token>      IF WHILE DO LABEL
-%token <token>      DECLARE END INTEGER REAL BOOLEAN CHAR ARRAY OF PROCEDURE THEN ELSE UNTIL FALSE TRUE
-%token <token>      READ WRITE GOTO RETURN
-%token <token>      NOT OR AND
-%token <token>      ASSIGNOP
-%token <token>      EQL NEQ LSS GTR LEQ GEQ PLUS MINUS TIMES DIV
-%token <token>      COMMA SEMICOLON DOT LPAREN RPAREN LBRACKET RBRACKET COLON EXP
-%token <string>     STRING
+%token <string> UINT
+%token <string> ID
+%token <token>  IF WHILE DO LABEL
+%token <token>  DECLARE END INTEGER REAL BOOLEAN CHAR ARRAY OF PROCEDURE
+%token <token>  THEN ELSE UNTIL FALSE TRUE
+%token <token>  READ WRITE GOTO RETURN
+%token <token>  NOT OR AND
+%token <token>  ASSIGNOP
+%token <token>  EQL NEQ LSS GTR LEQ GEQ PLUS MINUS TIMES DIV
+%token <token>  COMMA SEMICOLON DOT LPAREN RPAREN LBRACKET RBRACKET COLON EXP
+%token <string> STRING
 
-%type <type> condition expression simple_expr term factor_a factor variable constant
+%type  <type> condition expression simple_expr term factor_a factor
+%type  <type> variable constant
 
 /* precedencia de operadores */
 %left PLUS MINUS
@@ -115,15 +117,16 @@
 program         :
     PROGRAM
     {
-        gen_code("\tINPP\n");
+        genMepa("\tINPP\n");
     }
     identifier
     {
-        symbol1 = object_create(*yytext->string, level, offset); auxTable->push(symbol1);
+        symbol1 = buildSymbol(*yytext->string, level, offset);
+        auxTable->push(symbol1);
     }
     proc_body
     {
-        gen_code("\tPARA\n");
+        genMepa("\tPARA\n");
     }
 ;
 
@@ -138,7 +141,7 @@ block_stmt:
         varsNumber = 0;
 
         while ( (symbol1 = symbolTable->top()) ) {
-            if (symbol1->cat == C_PROCEDURE && symbol1->level == level) {
+            if (symbol1->category == C_PROCEDURE && symbol1->level == level) {
                 break;
             }
             if (symbol1->level != level) {
@@ -146,13 +149,13 @@ block_stmt:
             }
 
             symbolTable->topPop();
-            if (symbol1->cat == C_VARIABLE)
+            if (symbol1->category == C_VARIABLE)
                 varsNumber++;
         }
         if (varsNumber)
-            gen_code("\tDMEM %d\n", varsNumber);
+            genMepa("\tDMEM %d\n", varsNumber);
         if (symbol1) {
-            gen_code("\tRTPR %d, %d\n", level, symbol1->nParameter);
+            genMepa("\tRTPR %d, %d\n", level, symbol1->nParameter);
         }
         level--;
     }
@@ -174,9 +177,9 @@ decl        :
             }
             variable_decl
             {
-                gen_code("\tDSVS ");
-                symbol1 = object_create_label(write_label());
-                gen_code("\n");
+                genMepa("\tDSVS ");
+                symbol1 = buildLabel(write_label());
+                genMepa("\n");
                 labels->push(symbol1);
             }
             |
@@ -188,7 +191,7 @@ decl        :
                 level--;
                 symbol1 = labels->topPop();
                 if(symbol1)
-                    gen_code("R%03d:\tNADA\n", symbol1->label);
+                    genMepa("R%03d:\tNADA\n", symbol1->label);
             }
 ;
 
@@ -196,11 +199,11 @@ variable_decl:
     type ident_list
     {
         if (auxTable->size())
-            gen_code("\tAMEM %d\n", auxTable->size());
+            genMepa("\tAMEM %d\n", auxTable->size());
 
         varsNumber = auxTable->size();
         while ( (symbol1 = auxTable->topPop()) ) {
-            symbol1->cat = C_VARIABLE;
+            symbol1->category = C_VARIABLE;
             symbol1->type = current_type;
             symbolTable->push(symbol1);
         }
@@ -211,16 +214,16 @@ ident_list:
     identifier
     {
         if (symbol2 && symbol2->level == level) {
-            yyerror("Variável já declarada.");
+            yyerror("Variavel ja declarada.");
         }
 
         if (isLabel) {
-            symbol1 = object_create_label(label);
+            symbol1 = buildLabel(label);
             label++;
             symbol1->id = *yytext->string;
             symbolTable->push(symbol1);
         } else {
-            symbol1 = object_create(*yytext->string, level, offset);
+            symbol1 = buildSymbol(*yytext->string, level, offset);
             offset++;
             auxTable->push(symbol1);
         }
@@ -229,15 +232,15 @@ ident_list:
         identifier
         {
             if (symbol2 && symbol2->level == level)
-                yyerror("Variável já declarada.");
+                yyerror("Variavel ja declarada.");
 
             if (isLabel) {
-                symbol1 = object_create_label(label);
+                symbol1 = buildLabel(label);
                 label++;
                 symbol1->id = *yytext->string;
                 symbolTable->push(symbol1);
             } else {
-                symbol1 = object_create(*yytext->string, level, offset);
+                symbol1 = buildSymbol(*yytext->string, level, offset);
                 offset++;
                 auxTable->push(symbol1);
             }
@@ -269,14 +272,14 @@ proc_header     :
     PROCEDURE
     {
         write_label();
-        gen_code(":\tENPR %d\n", level);
+        genMepa(":\tENPR %d\n", level);
     }
     identifier
     {
         if (symbol1 && symbol1->level == level)
-             yyerror("Procedimento já declarado.");
+             yyerror("Procedimento ja declarado.");
 
-        procedureSymbol = object_create_procedure(*yytext->string);
+        procedureSymbol = buildProcedure(*yytext->string);
         procedureSymbol->level = level;
         procedureSymbol->label = label - 1;
     }
@@ -292,7 +295,8 @@ optional_proc_params: /* empty */
                     | LPAREN formal_list RPAREN
                     {
                         procedureSymbol->nParameter = parameters->size();
-                        procedureSymbol->parameters = (int*)malloc(sizeof(int) * procedureSymbol->nParameter);
+                        procedureSymbol->parameters = (int*)malloc(sizeof(int)
+                            * procedureSymbol->nParameter);
                         int i;
 
                         i = procedureSymbol->nParameter - 1;
@@ -313,24 +317,24 @@ formal_list     :
     parameter_decl
 	{
         if (symbol2 && symbol2->level == level)
-            yyerror("Variável já declarada.");
+            yyerror("Variavel ja declarada.");
     }
     |
     formal_list SEMICOLON parameter_decl
     {
         if (symbol2 && symbol2->level == level)
-            yyerror("Variável já declarada.");
+            yyerror("Variavel ja declarada.");
     }
     ;
 
 parameter_decl:
     parameter_type identifier
     {
-        symbol1 = object_create(*yytext->string, level, offset);
+        symbol1 = buildSymbol(*yytext->string, level, offset);
         offset++;
         auxTable->push(symbol1);
 
-        symbol1->cat = C_PARAMETER;
+        symbol1->category = C_PARAMETER;
         symbol1->type = current_type;
         symbol1->passage = P_ADDRESS;
         parameters->push(symbol1);
@@ -354,9 +358,10 @@ stmt            : identifier
             //        symbol1 = list_find(symbolTable, yytext);
                     symbol1->level = level;
                     if (symbol1) {
-                        gen_code("R%03d:\tENRT %d %d\n", symbol1->label, level, varsNumber);
+                        genMepa("R%03d:\tENRT %d %d\n", symbol1->label, level,
+                                varsNumber);
                     } else {
-                        yyerror("label não declarado.\n");
+                        yyerror("label nao declarado.\n");
                     }
                 } COLON unlabelled_stmt
                 | unlabelled_stmt
@@ -368,9 +373,9 @@ unlabelled_stmt : assign_stmt
                     | if_stmt
                     |
                     {
-                        symbol1 = object_create(std::string(""), 0, 0);
+                        symbol1 = buildSymbol(std::string(""), 0, 0);
                         symbol1->label = write_label();
-                        gen_code(":\tNADA\n");
+                        genMepa(":\tNADA\n");
                         labels->push(symbol1);
                     }
                     loop_stmt
@@ -385,19 +390,20 @@ unlabelled_stmt : assign_stmt
 assign_stmt     :
                 variable
                 {
-                    assignedSymbol = object_cpy(assignedSymbol, symbol1);
+                    assignedSymbol = copySymbol(assignedSymbol, symbol1);
                 }
                 ASSIGNOP expression
                 {
                     if (!assignedSymbol)
                         yyerror("variavel nao declarada.");
 
-                    if (assignedSymbol->cat == C_PARAMETER) {
-                        gen_code("\tARMI %d, %d # %s\n", assignedSymbol->level, assignedSymbol->offset, assignedSymbol->id.c_str());
+                    if (assignedSymbol->category == C_PARAMETER) {
+                        genMepa("\tARMI %d, %d # %s\n", assignedSymbol->level,
+                            assignedSymbol->offset, assignedSymbol->id.c_str());
                     } else {
-                        gen_code("\tARMZ %d, %d # %s\n", assignedSymbol->level, assignedSymbol->offset, assignedSymbol->id.c_str());
+                        genMepa("\tARMZ %d, %d # %s\n", assignedSymbol->level,
+                            assignedSymbol->offset, assignedSymbol->id.c_str());
                     }
-                    //std::cerr << "var = " << $1 << " expr = " << $3 << " st = " << assignedSymbol->type << std::endl;
                 }
 ;
 
@@ -409,7 +415,7 @@ variable:
 variable_list   :
     {
         if (parsingRead) {
-            gen_code("\tLEIT\n");
+            genMepa("\tLEIT\n");
         }
     }
     variable
@@ -417,16 +423,19 @@ variable_list   :
         if (parsingRead) {
             if (!symbol1)
                 yyerror("variable nao declarada.");
-            if (symbol1->cat == C_PARAMETER && symbol1->passage == P_ADDRESS) {
-                gen_code("\tARMI %d, %d # %s\n", symbol1->level, symbol1->offset, symbol1->id.c_str());
+            if (symbol1->category == C_PARAMETER
+                    && symbol1->passage == P_ADDRESS) {
+                genMepa("\tARMI %d, %d # %s\n", symbol1->level,
+                    symbol1->offset, symbol1->id.c_str());
             } else
-                gen_code("\tARMZ %d, %d # %s\n", symbol1->level, symbol1->offset, symbol1->id.c_str());
+                genMepa("\tARMZ %d, %d # %s\n", symbol1->level,
+                    symbol1->offset, symbol1->id.c_str());
         }
     }
     | variable_list COMMA
     {
         if (parsingRead) {
-            gen_code("\tLEIT\n");
+            genMepa("\tLEIT\n");
         }
     }
     variable
@@ -434,10 +443,13 @@ variable_list   :
         if (parsingRead) {
             if (!symbol1)
                 yyerror("variable nao declarada.");
-            if (symbol1->cat == C_PARAMETER && symbol1->passage == P_ADDRESS) {
-                gen_code("\tARMI %d, %d # %s\n", symbol1->level, symbol1->offset, symbol1->id.c_str());
+            if (symbol1->category == C_PARAMETER
+                    && symbol1->passage == P_ADDRESS) {
+                genMepa("\tARMI %d, %d # %s\n", symbol1->level,
+                    symbol1->offset, symbol1->id.c_str());
             } else
-                gen_code("\tARMZ %d, %d # %s\n", symbol1->level, symbol1->offset, symbol1->id.c_str());
+                genMepa("\tARMZ %d, %d # %s\n", symbol1->level,
+                    symbol1->offset, symbol1->id.c_str());
         }
     }
 ;
@@ -448,36 +460,36 @@ if_stmt:
     IF condition
     THEN stmt_list
     {
-        symbol1 = object_create(std::string(""), 0, 0);
-        gen_code("\tDSVS ");
+        symbol1 = buildSymbol(std::string(""), 0, 0);
+        genMepa("\tDSVS ");
         symbol1->label = write_label();
-        gen_code("\n");
+        genMepa("\n");
         symbol2 = labels->topPop();
-        gen_code("R%03d:\tNADA\n", symbol2->label);
+        genMepa("R%03d:\tNADA\n", symbol2->label);
         labels->push(symbol1);
     }
     %prec LOWER_THAN_ELSE
     {
         symbol1 = labels->topPop();
-        gen_code("R%03d:\tNADA\n", symbol1->label);
+        genMepa("R%03d:\tNADA\n", symbol1->label);
     }
     END
     |
     IF condition
     THEN stmt_list
     {
-        symbol1 = object_create(std::string(""), 0, 0);
-        gen_code("\tDSVS ");
+        symbol1 = buildSymbol(std::string(""), 0, 0);
+        genMepa("\tDSVS ");
         symbol1->label = write_label();
-        gen_code("\n");
+        genMepa("\n");
         symbol2 = labels->topPop();
-        gen_code("R%03d:\tNADA\n", symbol2->label);
+        genMepa("R%03d:\tNADA\n", symbol2->label);
         labels->push(symbol1);
     }
     ELSE stmt_list
     {
         symbol1 = labels->topPop();
-        gen_code("R%03d:\tNADA\n", symbol1->label);
+        genMepa("R%03d:\tNADA\n", symbol1->label);
     }
     END
 ;
@@ -485,10 +497,10 @@ if_stmt:
 condition:
     expression
     {
-        symbol1 = object_create(std::string(""), 0, 0);
-        gen_code("\tDSVF ");
+        symbol1 = buildSymbol(std::string(""), 0, 0);
+        genMepa("\tDSVF ");
         symbol1->label = write_label();
-        gen_code("\n");
+        genMepa("\n");
         labels->push(symbol1);
         $$ = $1;
     }
@@ -498,8 +510,8 @@ loop_stmt:  WHILE condition DO stmt_list
             {
                 symbol1 = labels->topPop();
                 symbol2 = labels->topPop();
-                gen_code("\tDSVS r%02d\n", symbol2->label);
-                gen_code("R%03d:\tNADA\n", symbol1->label);
+                genMepa("\tDSVS r%02d\n", symbol2->label);
+                genMepa("R%03d:\tNADA\n", symbol1->label);
             }
             END
             |
@@ -507,8 +519,8 @@ loop_stmt:  WHILE condition DO stmt_list
             {
                 symbol1 = labels->topPop();
                 symbol2 = labels->topPop();
-                gen_code("\tDSVS r%02d\n", symbol2->label);
-                gen_code("R%03d:\tNADA\n", symbol1->label);
+                genMepa("\tDSVS r%02d\n", symbol2->label);
+                genMepa("R%03d:\tNADA\n", symbol1->label);
             }
             UNTIL condition;
 
@@ -538,9 +550,10 @@ goto_stmt:
     GOTO label
     {
         if (symbol1) {
-            gen_code("\tDSVR r%02d, %d, %d\n", symbol1->label, symbol1->level, level);
+            genMepa("\tDSVR r%02d, %d, %d\n", symbol1->label, symbol1->level,
+                level);
         } else {
-            yyerror("label não declarado.\n");
+            yyerror("label nao declarado.\n");
         }
     }
 ;
@@ -549,26 +562,26 @@ proc_stmt   :
             identifier
             {
                 if (!symbol1)
-                    yyerror("procedimento não declarado");
+                    yyerror("procedimento nao declarado");
 
-                procedureSymbol = object_cpy(procedureSymbol, symbol1);
+                procedureSymbol = copySymbol(procedureSymbol, symbol1);
                 paramsNumber = 0;
             }
             LPAREN expr_list RPAREN
             {
-                gen_code("\tCHPR R%03d, %d\n", procedureSymbol->label, level);
+                genMepa("\tCHPR R%03d, %d\n", procedureSymbol->label, level);
                 procedureSymbol = NULL;
             }
             |
             identifier
             {
                 if (!symbol1)
-                    yyerror("procedimento não declarado");
+                    yyerror("procedimento nao declarado");
 
-                procedureSymbol = object_cpy(procedureSymbol, symbol1);
+                procedureSymbol = copySymbol(procedureSymbol, symbol1);
                 paramsNumber = 0;
 
-                gen_code("\tCHPR R%03d, %d\n", procedureSymbol->label, level);
+                genMepa("\tCHPR R%03d, %d\n", procedureSymbol->label, level);
                 procedureSymbol = NULL;
             }
 ;
@@ -579,38 +592,40 @@ expr_list:
     expression
     {
         if (parsingWrite)
-            gen_code("\tIMPR\n");
+            genMepa("\tIMPR\n");
     }
     |
     expr_list COMMA
     expression
     {
         if (parsingWrite)
-            gen_code("\tIMPR\n");
+            genMepa("\tIMPR\n");
     }
 ;
 
 
 expression:
     simple_expr {  $$ = $1; }
-    | simple_expr EQL simple_expr { gen_code("\tCMIG\n"); $$ = booleanType; }
-    | simple_expr NEQ simple_expr { gen_code("\tCMDG\n"); $$ = booleanType; }
-    | simple_expr LSS simple_expr { gen_code("\tCMME\n"); $$ = booleanType; }
-    | simple_expr GTR simple_expr { gen_code("\tCMMA\n"); $$ = booleanType; }
-    | simple_expr LEQ simple_expr { gen_code("\tCMEG\n"); $$ = booleanType; }
-    | simple_expr GEQ simple_expr { gen_code("\tCMAG\n"); $$ = booleanType; }
+    | simple_expr EQL simple_expr { genMepa("\tCMIG\n"); $$ = booleanType; }
+    | simple_expr NEQ simple_expr { genMepa("\tCMDG\n"); $$ = booleanType; }
+    | simple_expr LSS simple_expr { genMepa("\tCMME\n"); $$ = booleanType; }
+    | simple_expr GTR simple_expr { genMepa("\tCMMA\n"); $$ = booleanType; }
+    | simple_expr LEQ simple_expr { genMepa("\tCMEG\n"); $$ = booleanType; }
+    | simple_expr GEQ simple_expr { genMepa("\tCMAG\n"); $$ = booleanType; }
 ;
 
 simple_expr:
     term { $$ = $1; }
     | simple_expr PLUS  term
         {
-            gen_code("\tSOMA\n");
+            genMepa("\tSOMA\n");
             if ( $1 != realType && $1 != integerType) {
-                error("Tipo inválido para operação de subtração lado esquerdo " + t_type2str($1));
+                error("Tipo invalido para op. de subtracao lado esquerdo "
+                    + typeToString($1));
             }
             if ( $3 != realType && $3 != integerType) {
-                error("Tipo inválido para operação de subtração lado direto " + t_type2str($3));
+                error("Tipo invalido para op. de subtracao lado direto "
+                    + typeToString($3));
             }
             if ($1 == realType || $3 == realType) {
                 $$ = realType;
@@ -620,12 +635,14 @@ simple_expr:
         }
     | simple_expr MINUS term
         {
-            gen_code("\tSUBT\n");
+            genMepa("\tSUBT\n");
             if ( $1 != realType && $1 != integerType) {
-                error("Tipo inválido para operação de subtração lado esquerdo " + t_type2str($1));
+                error("Tipo invalido para op. de subtracao lado esquerdo "
+                    + typeToString($1));
             }
             if ( $3 != realType && $3 != integerType) {
-                error("Tipo inválido para operação de subtração lado direto " + t_type2str($3));
+                error("Tipo invalido para op. de subtracao lado direto "
+                    + typeToString($3));
             }
             if ($1 == realType || $3 == realType) {
                 $$ = realType;
@@ -635,12 +652,14 @@ simple_expr:
         }
     | simple_expr OR    term
         {
-            gen_code("\tDISJ\n");
+            genMepa("\tDISJ\n");
             if ( $1 != booleanType && $1 != integerType) {
-                error("Tipo inválido para operação booleana \"or\" lado esquerdo " + t_type2str($1));
+                error("Tipo invalido para op. logica \"or\" lado esquerdo "
+                    + typeToString($1));
             }
             if ( $3 != booleanType && $3 != integerType) {
-                error("Tipo inválido para operação booleana \"or\" lado direto " + t_type2str($3));
+                error("Tipo invalido para op. logica \"or\" lado direto "
+                    + typeToString($3));
             }
             $$ = booleanType;
         }
@@ -650,12 +669,14 @@ term:
     factor_a { $$ = $1; }
     | term TIMES factor_a
         {
-            gen_code("\tMULT\n");
+            genMepa("\tMULT\n");
             if ( $1 != realType && $1 != integerType) {
-                error("Tipo inválido para operação de multiplicação lado esquerdo " + t_type2str($1));
+                error("Tipo invalido para multiplicacao lado esquerdo "
+                    + typeToString($1));
             }
             if ( $3 != realType && $3 != integerType) {
-                error("Tipo inválido para operação de multiplicação lado direto " + t_type2str($3));
+                error("Tipo invalido para multiplicacao lado direto "
+                    + typeToString($3));
             }
             if ($1 == realType || $3 == realType) {
                 $$ = realType;
@@ -665,12 +686,14 @@ term:
         }
     | term DIV   factor_a
         {
-            gen_code("\tDIVI\n");
+            genMepa("\tDIVI\n");
             if ( $1 != realType && $1 != integerType) {
-                error("Tipo inválido para operação de divisão lado esquerdo " + t_type2str($1));
+                error("Tipo invalido para op. de divisao lado esquerdo "
+                    + typeToString($1));
             }
             if ( $3 != realType && $3 != integerType) {
-                error("Tipo inválido para operação de divisão lado direto " + t_type2str($3));
+                error("Tipo invalido para op. de divisao lado direto "
+                    + typeToString($3));
             }
             if ($1 == realType || $3 == realType) {
                 $$ = realType;
@@ -680,12 +703,14 @@ term:
         }
     | term AND   factor_a
         {
-            gen_code("\tCONJ\n");
+            genMepa("\tCONJ\n");
             if ( $1 != booleanType && $1 != integerType) {
-                error("Tipo inválido para operação booleana \"and\" lado esquerdo " + t_type2str($1));
+                error("Tipo invalido para op. logica \"and\" lado esquerdo "
+                    + typeToString($1));
             }
             if ( $3 != booleanType && $3 != integerType) {
-                error("Tipo inválido para operação booleana \"and\" lado direto " + t_type2str($3));
+                error("Tipo invalido para op. logica \"and\" lado direto "
+                    + typeToString($3));
             }
             $$ = booleanType;
         }
@@ -694,24 +719,27 @@ term:
 factor_a:   factor { $$ = $1;}
             | NOT factor
                 {
-                    gen_code("\tNEGA\n");
+                    genMepa("\tNEGA\n");
                     if ( $2 != booleanType && $2 != integerType) {
-                        error("Tipo inválido para operação booleana " + t_type2str($2));
+                        error("Tipo invalido para op. logica "
+                            + typeToString($2));
                     }
                     $$ = booleanType;
                 }
             | PLUS factor
                 {
                     if ( $2 != realType && $2 != integerType) {
-                        error("Tipo inválido para operação unária " + t_type2str($2));
+                        error("Tipo invalido para op. unaria "
+                            + typeToString($2));
                     }
                     $$ = $2;
                 }
             | MINUS factor
                 {
-                    gen_code("\tINVR\n");
+                    genMepa("\tINVR\n");
                     if ( $2 != realType && $2 != integerType) {
-                        error("Tipo inválido para operação unária " + t_type2str($2));
+                        error("Tipo invalido para op. unaria "
+                            + typeToString($2));
                     }
                     $$ = $2;
                 }
@@ -722,34 +750,42 @@ factor:
     {
 //        symbol1 = list_find(symbolTable, yytext);
         if (!symbol1)
-            yyerror("variável não declarada %s.", yytext->string->c_str());
+            yyerror("variavel nao declarada %s.", yytext->string->c_str());
 
         if (procedureSymbol && paramsNumber >= procedureSymbol->nParameter)
-            yyerror("procedimento %s chamado com número inválido de parâmetros %d de %d.", procedureSymbol->id.c_str(), paramsNumber, procedureSymbol->nParameter);
+            yyerror("procedimento %s chamado com numero invalido de parametros."
+                , procedureSymbol->id.c_str());
 
-        if (procedureSymbol && procedureSymbol->parameters[paramsNumber] == P_ADDRESS) {
-            if (symbol1->cat == C_VARIABLE) {
-                gen_code("\tCREN %d, %d # %s\n", symbol1->level, symbol1->offset, symbol1->id.c_str());
-            }else if (symbol1->cat == C_PARAMETER) {
+        if (procedureSymbol
+                && procedureSymbol->parameters[paramsNumber] == P_ADDRESS) {
+            if (symbol1->category == C_VARIABLE) {
+                genMepa("\tCREN %d, %d # %s\n", symbol1->level,
+                    symbol1->offset, symbol1->id.c_str());
+            }else if (symbol1->category == C_PARAMETER) {
                 if (symbol1->passage == P_VALUE) {
-                    gen_code("\tCREN %d, %d # %s\n", symbol1->level, symbol1->offset, symbol1->id.c_str());
+                    genMepa("\tCREN %d, %d # %s\n", symbol1->level,
+                        symbol1->offset, symbol1->id.c_str());
                 } else {
                     if (symbol1->passage == P_ADDRESS) {
-                        gen_code("\tCRVL %d, %d # %s\n", symbol1->level, symbol1->offset, symbol1->id.c_str());
+                        genMepa("\tCRVL %d, %d # %s\n", symbol1->level,
+                            symbol1->offset, symbol1->id.c_str());
                     }
                 }
             }
             paramsNumber++;
         } else {
-            if (symbol1->cat == C_VARIABLE){
-                gen_code("\tCRVL %d, %d # %s\n", symbol1->level, symbol1->offset, symbol1->id.c_str());
+            if (symbol1->category == C_VARIABLE){
+                genMepa("\tCRVL %d, %d # %s\n", symbol1->level,
+                    symbol1->offset, symbol1->id.c_str());
             } else {
-                if (symbol1->cat == C_PARAMETER) {
+                if (symbol1->category == C_PARAMETER) {
                     if (symbol1->passage == P_VALUE){
-                        gen_code("\tCRVL %d, %d # %s\n", symbol1->level, symbol1->offset, symbol1->id.c_str());
+                        genMepa("\tCRVL %d, %d # %s\n", symbol1->level,
+                            symbol1->offset, symbol1->id.c_str());
                     } else {
                         if (symbol1->passage == P_ADDRESS) {
-                            gen_code("\tCRVI %d, %d # %s\n", symbol1->level, symbol1->offset, symbol1->id.c_str());
+                            genMepa("\tCRVI %d, %d # %s\n", symbol1->level,
+                                symbol1->offset, symbol1->id.c_str());
                         }
                     }
                 }
@@ -759,12 +795,13 @@ factor:
     }
     | constant
     {
-        if (procedureSymbol && procedureSymbol->parameters[paramsNumber] == P_ADDRESS)
-            yyerror("parâmetro inteiro passado por referência.");
+        if (procedureSymbol
+                && procedureSymbol->parameters[paramsNumber] == P_ADDRESS)
+            yyerror("parametro inteiro passado por referencia.");
         if (procedureSymbol && paramsNumber >= procedureSymbol->nParameter)
-            yyerror("procedimento chamado com número inválido de parâmetros.");
+            yyerror("procedimento chamado com numero invalido de parametros.");
 
-        gen_code("\tCRCT %s\n", const_value);
+        genMepa("\tCRCT %s\n", const_value);
         $$ = $1;
     }
     | LPAREN expression RPAREN {  $$ = $2; }
@@ -780,7 +817,11 @@ boolean_constant: FALSE { const_value = strdup("0"); }
 
 integer_constant: unsigned_integer ;
 
-unsigned_integer: UINT { const_value = strdup(yytext->string->c_str()); const_number = strtol(const_value, NULL, 10);} ;
+unsigned_integer: UINT
+                {
+                    const_value = strdup(yytext->string->c_str());
+                    const_number = strtol(const_value, NULL, 10);
+                } ;
 
 real_constant   : unsigned_real ;
 
@@ -793,13 +834,15 @@ unsigned_real   :   unsigned_integer
                     {
                         fractional_part = const_number;
                         fractional_part_length = strlen(const_value);
-                        coefficient = integer_part + (fractional_part/(10^fractional_part_length));
+                        coefficient = integer_part
+                            + (fractional_part/(10^fractional_part_length));
                         exponent = 0;
                     }
                     optional_scale_factor
                     {
                         const_value = (char*)malloc(MAXNUMSTR*sizeof(char));
-                        snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent));
+                        snprintf(const_value, MAXNUMSTR, "%d",
+                            coefficient*(10^exponent));
                     }
                 |   unsigned_integer
                     {
@@ -808,16 +851,18 @@ unsigned_real   :   unsigned_integer
                     scale_factor
                     {
                         const_value = (char*)malloc(MAXNUMSTR*sizeof(char));
-                        snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent));
+                        snprintf(const_value, MAXNUMSTR, "%d",
+                            coefficient*(10^exponent));
                     }
 ;
 
-optional_scale_factor:
-                        |   scale_factor
-                            {
-                                const_value = (char*)malloc(MAXNUMSTR*sizeof(char));
-                                snprintf(const_value, MAXNUMSTR, "%d", coefficient*(10^exponent));
-                            }
+optional_scale_factor: /* empty */
+                    |   scale_factor
+                        {
+                            const_value = (char*)malloc(MAXNUMSTR*sizeof(char));
+                            snprintf(const_value, MAXNUMSTR, "%d",
+                                coefficient*(10^exponent));
+                        }
 
 scale_factor    : "E" PLUS unsigned_integer { exponent = const_number; }
                 | "E" MINUS unsigned_integer { exponent = -const_number; } ;

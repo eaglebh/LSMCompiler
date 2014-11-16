@@ -1,11 +1,8 @@
-#ifndef _list_
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#ifndef _SymbolStackH_
+#define _SymbolStackH_
 #include <stack>
 #include <list>
-#include "object.h"
-#define _list_
+#include "Symbol.h"
 
 class SymbolStack {
     public:

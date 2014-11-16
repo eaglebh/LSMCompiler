@@ -1,4 +1,4 @@
-#include "list.h"
+#include "SymbolStack.h"
 #include <algorithm>
 
 Symbol *SymbolStack::topPop() {
@@ -9,12 +9,11 @@ Symbol *SymbolStack::topPop() {
     return node;
 }
 
-Symbol* SymbolStack::find(const std::string text){
-    //std::list<t_object*>::iterator findIter = std::find(symbolList.begin(), symbolList.end(), 1);
-
+Symbol* SymbolStack::find(const std::string id){
     Symbol* aux = NULL;
-    for (std::list<Symbol*>::iterator it = symbolList.begin(); it != symbolList.end(); it++) {
-        if((*it)->id == text)
+    for (std::list<Symbol*>::iterator it = symbolList.begin();
+            it != symbolList.end(); it++) {
+        if((*it)->id == id)
             if((aux == NULL) || ((*it)->level > aux->level))
                 aux = *it;
     }

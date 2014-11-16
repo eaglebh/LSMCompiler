@@ -14,9 +14,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ")
 
 set(SOURCE_FILES
     struct/list.cpp
-    struct/list.h
+    struct/SymbolStack.h
     struct/object.cpp
-    struct/object.h
+    struct/Symbol.h
     diffold
     node.h
     ${BISON_LSMParser_OUTPUTS}

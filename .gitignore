@@ -7,3 +7,4 @@ a.out
 /obj
 /build
 .idea
+*.o
