@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="LSMCompiler" />
+		<Option makefile_is_custom="1" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="debug">
+				<Option output="test" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option parameters="&lt; t/teste6.lsm" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="all">
+				<Option output="test" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+		</Compiler>
+		<Unit filename="Makefile" />
+		<Unit filename="main.cpp" />
+		<Unit filename="parser.cpp" />
+		<Unit filename="parser.h" />
+		<Unit filename="parser.yy" />
+		<Unit filename="scanner.cpp" />
+		<Unit filename="scanner.h" />
+		<Unit filename="scanner.ll" />
+		<Unit filename="stack.hh" />
+		<Unit filename="struct/list.cpp" />
+		<Unit filename="struct/list.h" />
+		<Unit filename="struct/object.cpp" />
+		<Unit filename="struct/object.h" />
+		<Unit filename="t/teste1.lsm" />
+		<Unit filename="t/teste2.lsm" />
+		<Unit filename="t/teste3.lsm" />
+		<Unit filename="t/teste4.lsm" />
+		<Unit filename="t/teste5.lsm" />
+		<Unit filename="t/teste6.lsm" />
+		<Unit filename="t/teste7.lsm" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

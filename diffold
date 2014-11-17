@@ -9,6 +9,10 @@ do
     then
         diferente=1;
     fi
+    grep -v ^level /tmp/${f}.err > /tmp/junk
+    grep ^level /tmp/${f}.err > /tmp/${f}.ts
+    mv /tmp/junk /tmp/${f}.err
+
     r2="$(diff  ${f}.err /tmp/${f}.err)"
     if [ ! -z "$r2" ] 
     then

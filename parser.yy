@@ -129,6 +129,7 @@ program         :
     proc_body
     {
         genMepa("\tPARA\n");
+        symbolTable->print();
     }
 ;
 

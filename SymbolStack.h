@@ -14,8 +14,10 @@ class SymbolStack {
             symbolList.push_back(obj);
         };
         void pop() {
-            if (!symbolStack.empty())
+            if (!symbolStack.empty()) {
                 symbolStack.pop();
+                symbolList.pop_back();
+            }
         };
         Symbol* top() {
             if (symbolStack.empty())
@@ -28,6 +30,7 @@ class SymbolStack {
                 return 0;
             return symbolStack.size();
         };
+        void print();
 
     private:
         std::stack<Symbol*> symbolStack;

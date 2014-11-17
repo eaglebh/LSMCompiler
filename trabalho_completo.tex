@@ -7,6 +7,7 @@
 \usepackage{amssymb}
 \usepackage{url}
 \usepackage{listings}
+\usepackage{verbatim}
 
 \lstset{inputencoding=latin1} 
 
@@ -101,7 +102,7 @@ Cada símbolo tem o seu tipo configurado no momento da declaração do símbolo,
   genMepa("\tDISJ\n");
   if ( $1 != booleanType && $1 != integerType) {
     typeError("Tipo invalido para op. logica \"or\" lado esquerdo "
-      + typeToString($1));
+      + typeToString($1));\lstinputlisting
   }
   if ( $3 != booleanType && $3 != integerType) {
     typeError("Tipo invalido para op. logica \"or\" lado direto "
@@ -179,45 +180,65 @@ Por fim, é possível executar o programa binário, conforme exemplo a seguir:
 \end{verbatim}
 
 
+
+\section{Testes e Resultados}
+
+O método utilizado para se verificar a correção do compilador como um todo, foi a execução do programa sobre cada um dos testes disponibilizados na especificação do trabalho prático. Os programas de teste utilizados, bem como os resultados de execução seguem listados. A fim de conseguir gerar código para todos os testes, os mesmos foram editados até que estivessem completamente corretos, os códigos fonte dos testes, os resultados e a tabela de símbolos ao fim da execução podem ser vistos nas listagens que se seguem:
+
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste1.lsm},label={lst:in1}]{t/teste1.lsm}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste1.lsm},label={lst:out1}]{t/teste1.lsm.out}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language={},caption={Tabela de símbolos para teste1.lsm},label={lst:out1}]{t/teste1.lsm.ts}
+
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste2.lsm},label={lst:in2}]{t/teste2.lsm}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste2.lsm},label={lst:out2}]{t/teste2.lsm.out}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Tabela de símbolos para teste2.lsm},label={lst:out2}]{t/teste2.lsm.ts}
+
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste3.lsm},label={lst:in3}]{t/teste3.lsm}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste3.lsm},label={lst:out3}]{t/teste3.lsm.out}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Tabela de símbolos para teste3.lsm},label={lst:out3}]{t/teste3.lsm.ts}
+
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste4.lsm},label={lst:in4}]{t/teste4.lsm}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste4.lsm},label={lst:out4}]{t/teste4.lsm.out}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Tabela de símbolos para teste4.lsm},label={lst:out4}]{t/teste4.lsm.ts}
+
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste5.lsm},label={lst:in5}]{t/teste5.lsm}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste5.lsm},label={lst:out5}]{t/teste5.lsm.out}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Tabela de símbolos para teste5.lsm},label={lst:out5}]{t/teste5.lsm.ts}
+
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste6.lsm},label={lst:in6}]{t/teste6.lsm}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste6.lsm},label={lst:out6}]{t/teste6.lsm.out}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Tabela de símbolos para teste6.lsm},label={lst:out6}]{t/teste6.lsm.ts}
+
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste7.lsm},label={lst:in7}]{t/teste7.lsm}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste7.lsm},label={lst:out7}]{t/teste7.lsm.out}
+\smallskip
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Tabela de símbolos para teste7.lsm},label={lst:out7}]{t/teste7.lsm.ts}
+
+
 \section{Listagem Final de Códigos} \label{listagem}
 
 O principal arquivo de implementação é o parser.yy que serve de entrada para a ferramenta bison, cujo fonte pode ser visualizado na listagem \ref{lst:parser}.
 
 \lstinputlisting[basicstyle=\footnotesize,language=C++,caption={Programa Yacc},label={lst:parser}]{parser.yy}
 
-
-\section{Testes e Resultados}
-
-O método utilizado para se verificar a correção do compilador como um todo, foi a execução do programa sobre cada um dos testes disponibilizados na especificação do trabalho prático. Os programas de teste utilizados, bem como os resultados de execução seguem listados. A fim de conseguir gerar código para todos os testes, os mesmos foram editados até que estivessem completamente corretos, os resultados podem ser vistos nas listagens que se seguem:
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste1.lsm},label={lst:in1}]{t/teste1.lsm}
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste1.lsm},label={lst:out1}]{t/teste1.lsm.out}
-
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste2.lsm},label={lst:in2}]{t/teste2.lsm}
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste2.lsm},label={lst:out2}]{t/teste2.lsm.out}
-
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste3.lsm},label={lst:in3}]{t/teste3.lsm}
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste3.lsm},label={lst:out3}]{t/teste3.lsm.out}
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste4.lsm},label={lst:in4}]{t/teste4.lsm}
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste4.lsm},label={lst:out4}]{t/teste4.lsm.out}
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste5.lsm},label={lst:in5}]{t/teste5.lsm}
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste5.lsm},label={lst:out5}]{t/teste5.lsm.out}
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste6.lsm},label={lst:in6}]{t/teste6.lsm}
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste6.lsm},label={lst:out6}]{t/teste6.lsm.out}
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste7.lsm},label={lst:in7}]{t/teste7.lsm}
-
-\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste7.lsm},label={lst:out7}]{t/teste7.lsm.out}
 
 \end{document}

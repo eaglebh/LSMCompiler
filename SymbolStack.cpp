@@ -1,5 +1,6 @@
 #include "SymbolStack.h"
 #include <algorithm>
+#include <iostream>
 
 Symbol *SymbolStack::topPop() {
     if (symbolStack.empty())
@@ -18,4 +19,13 @@ Symbol* SymbolStack::find(const std::string id){
                 aux = *it;
     }
     return aux;
+}
+
+void SymbolStack::print(){
+    std::cerr << "level nome\t\t" << "nivel\t" << "tipo" << std::endl;
+    for (std::list<Symbol*>::iterator it = symbolList.begin();
+            it != symbolList.end(); it++) {
+            Symbol* s = *it;
+        std::cerr << "level " << s->id << "\t\t" << s->level << '\t' << typeToString(s->type) << std::endl;
+    }
 }
