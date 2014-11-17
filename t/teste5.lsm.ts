@@ -1,0 +1,10 @@
+nome        nivel    tipo
+divisor     0        integer
+number      0        integer
+prime       0        boolean
+nofactor    0        boolean
+checkfactor 1        void
+nofactor    1        boolean
+number      1        integer
+integer1    1        integer
+bo          1        boolean
