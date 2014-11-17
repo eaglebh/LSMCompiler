@@ -72,49 +72,151 @@ Como o código final contém a parte de análise sintática, verificação de ti
 
 A análise semântica compreendendo tradução e verificação de tipos foi realizada sobre o arquivo de entrada para o bison, o parser.yy. Criou-se um conjunto de métodos auxiliares para geração e verificação de tipos, além de algumas variáveis de controle.
 
+Foram de grande auxílio para a verificação de tipos as variáveis criadas pelo bison para manipulação dos resultados das reduções. Como pode ser visto em um trecho de código para operações de subtração e "ou" lógico na listagem \ref{lst:posic}. A implementação completa pode ser visualizada na seção \ref{listagem}, no arquivo parser.yy, onde foram implementadas as verificações de tipos das várias operações possíveis na linguagem LSM. 
+
+Cada símbolo tem o seu tipo configurado no momento da declaração do símbolo, ou no momento do uso quando são constantes. Os tipos que um símbolo pode ter são: void, inteiro, real, boolean, caracter, label e string. Procedimentos são marcados com tipo void.
+
+
+\lstset{language=C++, breaklines=true}
+\begin{lstlisting}[caption={Verificação de tipos},frame=single,label={lst:posic},numbers=left,firstnumber=638]
+| simple_expr MINUS term
+{
+  genMepa("\tSUBT\n");
+  if ( $1 != realType && $1 != integerType) {
+    typeError("Tipo invalido para op. de subtracao lado esquerdo "
+      + typeToString($1));
+  }
+  if ( $3 != realType && $3 != integerType) {
+    typeError("Tipo invalido para op. de subtracao lado direto "
+      + typeToString($3));
+  }
+  if ($1 == realType || $3 == realType) {
+    $$ = realType;
+  } else {
+    $$ = integerType;
+  }
+}
+| simple_expr OR  term
+{
+  genMepa("\tDISJ\n");
+  if ( $1 != booleanType && $1 != integerType) {
+    typeError("Tipo invalido para op. logica \"or\" lado esquerdo "
+      + typeToString($1));
+  }
+  if ( $3 != booleanType && $3 != integerType) {
+    typeError("Tipo invalido para op. logica \"or\" lado direto "
+      + typeToString($3));
+  }
+  $$ = booleanType;
+}
+\end{lstlisting}
+
 \section{Código Intermediário}
 
-\section{Execução}
+Toda a parte de geração de código foi implementada sobre o arquivo de entrada do bison, o parser.yy, utilizando C e C++. Foram utilizadas algumas variáveis para controle, pois em algumas construções não é possível identificar toda a sentença de uma só vez, portanto precisamos guardar estado entre as reduções até se chegar a um ponto de compreensão da sentença completa.
+
+Foi criado um método chamado pgenMepa que recebe um conjunto variável de parâmetros e imprime a saída resultante, esse método contém uma parte comentada que foi utilizada como depuração do compilador, para verificação e correção de alguns erros encontrados durante a implementação. Durante as reduções executadas pelo parser, o código vai sendo gerado, até que se encontre um erro de sintaxe ou chegue ao fim do programa fonte.
+
+\subsection{Estruturas de dados}
+
+As principais estruturas de dados utilizadas na implementação do compilador são pilhas, listas, a classe Symbol utilizada para guardar informações dos símbolos do programa na tabela de símbolos implementada sobre a classe SymbolStack. A classe Symbol pode ser visualizada na listagem \ref{lst:Symbol}, apesar de ser uma classe, utilizou-se quase como uma estrutura de dados públicas para armazenar dados, algo como uma classe anêmica, ou repositório.
+
+\lstset{language=C++, breaklines=true}
+\begin{lstlisting}[caption={Representação de símbolos},frame=single,label={lst:Symbol},numbers=left,firstnumber=25]
+class Symbol {
+public:
+    std::string id;
+    int level;
+    int offset;
+    int label;
+    int category;
+    TypeEnum type;
+    int passage;
+    int nParameter;
+    int *parameters;
+
+    Symbol() {
+        id = std::string("");
+        level = 0;
+        offset = 0;
+        label = 0;
+        category = 0;
+        type = voidType;
+        passage = P_ADDRESS;
+        nParameter = 0;
+        parameters = NULL;
+    }
+};
+\end{lstlisting}
+
+\subsection{Utilização}
+
+Para gerar o binário do compilador foram utilizados: bison na sua versão 3.0.2, flex na versão 2.5.39, ferramentas de compilação GCC na versão 4.9.1, em especial o g++. Há um arquivo Makefile junto ao código fonte que pode ser utilizado para compilação do sistema, bastando executar o comando make na pasta do código fonte.
+
+A execução do compilador se dá através da seguinte sintaxe:
+\begin{verbatim}
+./compiler < teste1.lsm > teste1.MEPA
+\end{verbatim}
+Onde compiler é o nome do binário gerado, teste1.lsm é um arquivo fonte na linguagem LSM, e teste1.MEPA será o arquivo de saída com código MEPA.
+
+Para geração do binário final, faz-se necessário o uso do compilador MEPA, esse compilador baseia-se em um conjunto de macros e foi encontrado na internet, e pareceu funcionar bem. Deve-se executar os seguintes passos para geração do binário final:
+
+Copiar saída para arquivo com nome MEPA, exemplo:
+\begin{verbatim}
+cp teste1.MEPA MEPA
+\end{verbatim}
+Executar conjunto de macros MEPA para geração do código objeto, exemplo:
+\begin{verbatim}
+as mepa.s -o mepa.o --32
+\end{verbatim}
+Fazer ligação em binário final a partir do código objeto gerado, exemplo:
+\begin{verbatim}
+ld mepa.o -o mepa -lc -dynamic-linker /lib/ld-linux.so.2 -m elf_i386
+\end{verbatim}
+Por fim, é possível executar o programa binário, conforme exemplo a seguir:
+\begin{verbatim}
+./mepa
+\end{verbatim}
 
 
 \section{Listagem Final de Códigos} \label{listagem}
 
+O principal arquivo de implementação é o parser.yy que serve de entrada para a ferramenta bison, cujo fonte pode ser visualizado na listagem \ref{lst:parser}.
+
 \lstinputlisting[basicstyle=\footnotesize,language=C++,caption={Programa Yacc},label={lst:parser}]{parser.yy}
 
-\medskip
-O método utilizado para se verificar a correção do analisador sintático, assim como no caso do analisador léxico, foi a execução do programa sobre cada um dos testes disponibilizados na especificação do trabalho prático. Os programas de teste utilizados, bem como os resultados de execução seguem listados. Nos resultados, há a impressão de todos os tokens identificados até que aconteça algum erro, facilitando a identificação do ponto com problema:
 
-\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste1.lsm},label={lst:in1}]{t/teste1.lsm}
+\section{Testes e Resultados}
+
+O método utilizado para se verificar a correção do compilador como um todo, foi a execução do programa sobre cada um dos testes disponibilizados na especificação do trabalho prático. Os programas de teste utilizados, bem como os resultados de execução seguem listados. A fim de conseguir gerar código para todos os testes, os mesmos foram editados até que estivessem completamente corretos, os resultados podem ser vistos nas listagens que se seguem:
+
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste1.lsm},label={lst:in1}]{t/teste1.lsm}
 
 \lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste1.lsm},label={lst:out1}]{t/teste1.lsm.out}
 
 
-\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste2.lsm},label={lst:in2}]{t/teste2.lsm}
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste2.lsm},label={lst:in2}]{t/teste2.lsm}
 
 \lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste2.lsm},label={lst:out2}]{t/teste2.lsm.out}
 
 
-\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste3.lsm},label={lst:in3}]{t/teste3.lsm}
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste3.lsm},label={lst:in3}]{t/teste3.lsm}
 
 \lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste3.lsm},label={lst:out3}]{t/teste3.lsm.out}
 
-\pagebreak
-\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste4.lsm},label={lst:in4}]{t/teste4.lsm}
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste4.lsm},label={lst:in4}]{t/teste4.lsm}
 
 \lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste4.lsm},label={lst:out4}]{t/teste4.lsm.out}
 
-
-\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste5.lsm},label={lst:in5}]{t/teste5.lsm}
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste5.lsm},label={lst:in5}]{t/teste5.lsm}
 
 \lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste5.lsm},label={lst:out5}]{t/teste5.lsm.out}
 
-
-\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste6.lsm},label={lst:in6}]{t/teste6.lsm}
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste6.lsm},label={lst:in6}]{t/teste6.lsm}
 
 \lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste6.lsm},label={lst:out6}]{t/teste6.lsm.out}
 
-
-\lstinputlisting[basicstyle=\footnotesize,language=pascal,caption={Programa teste7.lsm},label={lst:in7}]{t/teste7.lsm}
+\lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Programa teste7.lsm},label={lst:in7}]{t/teste7.lsm}
 
 \lstinputlisting[basicstyle=\scriptsize,language=pascal,caption={Saída para teste7.lsm},label={lst:out7}]{t/teste7.lsm.out}
 
